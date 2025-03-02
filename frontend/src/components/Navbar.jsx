@@ -26,7 +26,7 @@ const Navbar = () => {
           <Link to="/dashboard" className="hover:text-blue-500">Home</Link>
           <Link to="/store" className="hover:text-blue-500">Store</Link>
           <Link to="/contact" className="hover:text-blue-500">Contact</Link>
-          <Link to="/shop" className="hover:text-blue-500">About Us</Link>
+          <Link to="/about-us" className="hover:text-blue-500">About Us</Link>
         </nav>
         <FaHeart className="text-xl cursor-pointer text-red-500 hover:scale-110 transition-transform" />
         <FaShoppingCart className="text-xl cursor-pointer text-blue-500 hover:scale-110 transition-transform" />
@@ -46,9 +46,9 @@ const Navbar = () => {
         >
           <FaTimes className="text-xl cursor-pointer self-end" onClick={() => setMenuOpen(false)} />
           <Link to="/" className="hover:text-blue-500">Home</Link>
-          <Link to="/shop" className="hover:text-blue-500">Shop</Link>
           <Link to="/store" className="hover:text-blue-500">Store</Link>
           <Link to="/contact" className="hover:text-blue-500">Contact</Link>
+          <Link to="/about-us" className="hover:text-blue-500">AboutUS</Link>
         </motion.div>
       )}
     </motion.header>

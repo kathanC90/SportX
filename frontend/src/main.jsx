@@ -8,7 +8,7 @@ import VerifyCodePage from './pages/VerifyCodePage';
 import DashboardPage from './pages/DashboardPage';
 import StoreSection from './pages/StoreSection';
 import ContactPage from './pages/ContactPage'; // ✅ Added Contact Page
-
+import AboutUs from './pages/AboutUs';
 import './index.css';
 
 createRoot(document.getElementById('root')).render(
@@ -20,7 +20,8 @@ createRoot(document.getElementById('root')).render(
       <Route path="/verify-code" element={<VerifyCodePage />} />
       <Route path="/dashboard" element={<DashboardPage />} />
       <Route path="/store" element={<StoreSection />} />
-      <Route path="/contact" element={<ContactPage />} /> {/* ✅ Added Contact Page Route */}
+      <Route path="/contact" element={<ContactPage />} />
+      <Route path="/about-us" element={<AboutUs />} />
     </Routes>
   </Router>
 );
