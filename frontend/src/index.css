@@ -1,3 +1,16 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+.nav-active {
+  color: #1890ff !important;
+  font-weight: bold;
+}
+
+.nav-inactive {
+  color: #333;
+  text-decoration: none;
+}
+
+.nav-inactive:hover {
+  color: #1890ff;
+}

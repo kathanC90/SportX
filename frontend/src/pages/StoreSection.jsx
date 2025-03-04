@@ -1,27 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Navbar from "../components/Navbar";
 import Filters from "../components/Filters";
 import ProductCard from "../components/ProductCard";
-import Footer from "../components/Footer"; // Import Footer
-
-const products = [
-  { id: 1, name: "Cricket Gloves", price: 39, category: "Cricket", color: "Red", gender: "Unisex", size: "M", image: "gloves.jpg" },
-  { id: 2, name: "Cricket Helmet", price: 14, category: "Cricket", color: "Blue", gender: "Men", size: "L", image: "helmet.jpg" },
-  { id: 3, name: "Cricket Bat", price: 25, category: "Cricket", color: "Brown", gender: "Unisex", size: "M", image: "bat.jpg" },
-  { id: 4, name: "Cricket Ball", price: 34, category: "Cricket", color: "Red", gender: "Unisex", size: "S", image: "ball.jpg" },
-  { id: 5, name: "Cricket Jersey", price: 22, category: "Apparel", color: "White", gender: "Women", size: "M", image: "jersey.jpg" },
-  { id: 6, name: "Cricket Pads", price: 44, category: "Cricket", color: "White", gender: "Men", size: "L", image: "pads.jpg" }
-];
+import Footer from "../components/Footer";
+import { getProducts } from "../api/api";
 
 const StoreSection = () => {
-  const [selectedFilters, setSelectedFilters] = useState({ price: 50, color: "", gender: "", size: "" });
+  const [products, setProducts] = useState([]);
+  const [selectedFilters, setSelectedFilters] = useState({
+    price: 50,
+    color: "",
+    gender: "",
+    size: "",
+  });
+
+  useEffect(() => {
+    getProducts().then(setProducts);
+  }, []);
 
   const handleFilterChange = (key, value) => {
     setSelectedFilters({ ...selectedFilters, [key]: value });
   };
 
-  const filteredProducts = products.filter(product => 
+  const filteredProducts = products.filter((product) =>
     product.price <= selectedFilters.price &&
     (selectedFilters.color === "" || product.color === selectedFilters.color) &&
     (selectedFilters.gender === "" || product.gender === selectedFilters.gender) &&
@@ -39,7 +41,7 @@ const StoreSection = () => {
           ))}
         </div>
       </div>
-      <Footer /> {/* Add Footer here */}
+      <Footer />
     </div>
   );
 };
