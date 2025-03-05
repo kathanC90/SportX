@@ -1,7 +1,8 @@
-import React from "react";
-import { Layout, Card, Button, Avatar, Rate, Typography } from "antd";
-import { PlusOutlined, EditOutlined } from "@ant-design/icons";
+import React, { useState } from "react";
+import { Layout, Card, Button, Rate, Typography, Modal, Tag } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/admin/Sidebar";
 import AdminNavbar from "../../components/admin/AdminNavbar";
 import "antd/dist/reset.css";
@@ -9,86 +10,145 @@ import "antd/dist/reset.css";
 const { Content } = Layout;
 const { Title, Text } = Typography;
 
-const products = [
-  { id: 1, name: "Cricket Bat", price: "$120.00", rating: 4.5, reviews: 131, image: "bat.jpg" },
-  { id: 2, name: "Table Tennis Paddles", price: "$60.00", rating: 4, reviews: 64, image: "paddles.jpg" },
-  { id: 3, name: "Badminton Shuttlecocks", price: "$24.59", rating: 4, reviews: 63, image: "shuttlecock.jpg" },
-  { id: 4, name: "Sneakers", price: "$89.10", rating: 4.2, reviews: 95, image: "sneakers.jpg" },
-  { id: 5, name: "Tennis Racket", price: "$75.00", rating: 4.3, reviews: 80, image: "racket.jpg" },
-  { id: 6, name: "Basketball", price: "$55.00", rating: 4.1, reviews: 78, image: "basketball.jpg" },
+const initialProducts = [
+  { id: 1, name: "Cricket Bat", price: "120.00", rating: 4.5, reviews: 131, image: "/images/bat.jpg", availability: "Available" },
+  { id: 2, name: "Table Tennis Paddles", price: "60.00", rating: 4, reviews: 64, image: "/images/paddles.jpg", availability: "Limited" },
+  { id: 3, name: "Badminton Shuttlecocks", price: "24.59", rating: 4, reviews: 63, image: "/images/shuttlecock.jpg", availability: "Out of Stock" },
 ];
 
+const availabilityTag = (status) => {
+  const colors = {
+    "Available": "green",
+    "Limited": "orange",
+    "Out of Stock": "red",
+  };
+  return <Tag color={colors[status]}>{status}</Tag>;
+};
+
 const ProductsPage = () => {
+  const [products, setProducts] = useState(initialProducts);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const navigate = useNavigate();
+
+  const handleEdit = (productId) => {
+    navigate(`/admin/edit-product/${productId}`);
+  };
+
+  const handleDelete = (productId) => {
+    Modal.confirm({
+      title: "Are you sure you want to delete this product?",
+      onOk: () => {
+        setProducts(products.filter((product) => product.id !== productId));
+      },
+    });
+  };
+
+  const showDetails = (product) => {
+    setSelectedProduct(product);
+  };
+
+  const closeModal = () => {
+    setSelectedProduct(null);
+  };
+
   return (
-    <Layout style={{ minHeight: "100vh", background: "#f4f6f8" }}>
+    <Layout style={{ minHeight: "100vh", background: "#f4f6f8", display: "flex" }}>
       <Sidebar />
-      <Layout>
+      <Layout style={{ flex: 1 }}>
         <AdminNavbar />
         <Content style={{ padding: 24 }}>
-          {/* Header Section */}
-          <div 
+          <motion.div 
             className="flex justify-between items-center mb-6 p-4 rounded-lg shadow-md bg-white"
-            style={{ position: "sticky", top: 0, zIndex: 1000 }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
           >
             <Title level={2} className="text-gray-800">Products</Title>
-            
-            {/* ✅ Always Visible Button */}
-            <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              size="large"
-              className="rounded-lg px-6 py-3 font-semibold text-lg"
-              style={{
-                backgroundColor: "#1890ff", // Ant Design primary color
-                color: "#fff",
-                border: "none",
-                visibility: "visible", // Ensure it's always visible
-                opacity: 1,
-              }}
+            <motion.button 
+              className="bg-blue-500 text-white px-4 py-2 rounded-md flex items-center gap-2 shadow-md hover:bg-blue-600 transition-all"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate("/admin/add-product")}
             >
-              Add New Product
-            </Button>
-          </div>
+              <PlusOutlined /> Add New Product
+            </motion.button>
+          </motion.div>
 
-          {/* Product Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-6">
             {products.map((product) => (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.3, delay: product.id * 0.1 }}
+              <motion.div 
+                key={product.id} 
+                initial={{ opacity: 0, scale: 0.9 }} 
+                animate={{ opacity: 1, scale: 1 }} 
+                transition={{ duration: 0.3 }}
               >
                 <Card
                   hoverable
                   cover={
-                    <motion.img
-                      src={product.image}
-                      alt={product.name}
-                      className="w-full h-48 object-cover rounded-t-xl"
+                    <motion.img 
+                      src={product.image} 
+                      alt={product.name} 
+                      className="w-full h-48 object-cover rounded-t-xl" 
                       whileHover={{ scale: 1.05 }}
                       transition={{ duration: 0.3 }}
                     />
                   }
                   className="shadow-lg rounded-xl overflow-hidden"
+                  onClick={() => showDetails(product)}
                 >
-                  <Title level={4} className="text-gray-900">{product.name}</Title>
-                  <Text className="block text-gray-600 text-lg font-semibold">{product.price}</Text>
-                  
+                  <Title level={4}>{product.name}</Title>
+                  <Text className="text-gray-600 text-lg font-semibold">${product.price}</Text>
                   <div className="flex items-center mt-2">
                     <Rate disabled defaultValue={product.rating} className="text-yellow-500" />
-                    <Text className="text-gray-500 ml-2">({product.reviews} reviews)</Text>
+                    <Text className="ml-2 text-gray-500">({product.reviews} reviews)</Text>
                   </div>
-
-                  <Button type="default" icon={<EditOutlined />} className="w-full mt-4">
-                    Edit Product
-                  </Button>
+                  <div className="mt-2">{availabilityTag(product.availability)}</div>
+                  <div className="flex justify-between mt-4">
+                    <motion.button 
+                      className="px-3 py-2 bg-gray-200 rounded-md flex items-center gap-1 hover:bg-gray-300 transition-all"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEdit(product.id);
+                      }}
+                    >
+                      <EditOutlined /> Edit
+                    </motion.button>
+                    <motion.button 
+                      className="px-3 py-2 bg-red-500 text-white rounded-md flex items-center gap-1 hover:bg-red-600 transition-all"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(product.id);
+                      }}
+                    >
+                      <DeleteOutlined /> Delete
+                    </motion.button>
+                  </div>
                 </Card>
               </motion.div>
             ))}
           </div>
         </Content>
       </Layout>
+
+      {/* Modal for Product Details */}
+      <Modal visible={!!selectedProduct} onCancel={closeModal} footer={null} title="Product Details">
+        {selectedProduct && (
+          <>
+            <img src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-56 object-cover rounded-md mb-4" />
+            <Title level={3}>{selectedProduct.name}</Title>
+            <Text className="block text-lg font-semibold">Price: ${selectedProduct.price}</Text>
+            <div className="flex items-center mt-2">
+              <Rate disabled defaultValue={selectedProduct.rating} className="text-yellow-500" />
+              <Text className="ml-2 text-gray-500">({selectedProduct.reviews} reviews)</Text>
+            </div>
+            <div className="mt-2">Availability: {availabilityTag(selectedProduct.availability)}</div>
+          </>
+        )}
+      </Modal>
     </Layout>
   );
 };
