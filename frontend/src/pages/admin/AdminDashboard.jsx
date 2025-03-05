@@ -1,11 +1,12 @@
 import React from "react";
-import { Layout } from "antd";
+import { Layout, Typography, Divider } from "antd";
 import Sidebar from "../../components/admin/Sidebar";
 import AdminNavbar from "../../components/admin/AdminNavbar";
 import DashboardCards from "../../components/admin/DashBoardCards";
 import DealsTable from "../../components/admin/DealsTable";
 
 const { Content } = Layout;
+const { Title } = Typography;
 
 const AdminDashboard = () => {
   return (
@@ -13,10 +14,20 @@ const AdminDashboard = () => {
       <Sidebar />
       <Layout style={{ flex: 1, background: "#f5f5f5" }}>
         <AdminNavbar />
-        <Content style={{ padding: 20 }}>
-          <h2 style={{ fontWeight: "bold", marginBottom: 20 }}>Dashboard</h2>
+        <Content style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto" }}>
+          <Title level={2} style={{ fontWeight: "bold", textAlign: "center", marginBottom: 20 }}>
+            Dashboard
+          </Title>
+
+          {/* Dashboard Cards */}
           <DashboardCards />
-          <h3 style={{ marginTop: 30, fontWeight: "bold" }}>Deals Details</h3>
+
+          <Divider style={{ margin: "30px 0" }} />
+
+          {/* Deals Section */}
+          <Title level={3} style={{ fontWeight: "bold", marginBottom: 10 }}>
+            Deals Details
+          </Title>
           <DealsTable />
         </Content>
       </Layout>
