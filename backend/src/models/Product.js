@@ -1,26 +1,25 @@
+// src/models/Product.js
 module.exports = (sequelize, DataTypes) => {
   const Product = sequelize.define("Product", {
-    id: {
-      type: DataTypes.UUID,
-      defaultValue: DataTypes.UUIDV4,
-      primaryKey: true,
-    },
     name: {
       type: DataTypes.STRING,
       allowNull: false,
     },
     description: {
       type: DataTypes.TEXT,
-      allowNull: true,
     },
     price: {
       type: DataTypes.FLOAT,
       allowNull: false,
     },
-    imageUrl: {
+    category: {
       type: DataTypes.STRING,
-      allowNull: true,
+    },
+    stock: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0,
     },
   });
+
   return Product;
 };
