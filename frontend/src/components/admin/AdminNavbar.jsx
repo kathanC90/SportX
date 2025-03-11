@@ -1,25 +1,42 @@
 import React, { useState } from "react";
-import { Layout, Dropdown, Menu, Avatar, Typography, Divider, Input } from "antd";
+import { Layout, Dropdown, Menu, Avatar, Typography, Divider, Input, message } from "antd";
 import { DownOutlined, UserOutlined, LogoutOutlined, SearchOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useUser, useClerk } from "@clerk/clerk-react";  // Clerk authentication
 
 const { Header } = Layout;
 const { Text } = Typography;
 
 const AdminNavbar = ({ onSearch }) => {
   const navigate = useNavigate();
+  const { signOut } = useClerk(); // Clerk sign-out function
+  const { user } = useUser(); // Get logged-in user details
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Handle Logout
+  const handleLogout = async () => {
+    try {
+      await signOut(); // Ensure complete session logout
+      message.success("Logged out successfully!"); // Display success message
+      setTimeout(() => {
+        window.location.href = "/sign-in"; // Force a full reload to clear stale session
+      }, 500);
+    } catch (error) {
+      message.error("Logout failed. Try again.");
+    }
+  };
+
+  // Handle Menu Clicks
   const handleMenuClick = (key) => {
     if (key === "profile") {
       navigate("/admin/edit-profile");
     } else if (key === "logout") {
-      console.log("Logging out...");
-      navigate("/");
+      handleLogout();
     }
   };
 
+  // Dropdown Menu
   const menuItems = (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -35,6 +52,7 @@ const AdminNavbar = ({ onSearch }) => {
     </motion.div>
   );
 
+  // Handle Search Input
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -52,7 +70,7 @@ const AdminNavbar = ({ onSearch }) => {
         boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
       }}
     >
-      {/* Animated Search Box */}
+      {/* Search Box */}
       <motion.div
         whileFocus={{ scale: 1.05 }}
         transition={{ duration: 0.2 }}
@@ -90,10 +108,11 @@ const AdminNavbar = ({ onSearch }) => {
         >
           <Avatar
             size="large"
-            icon={<UserOutlined />}
+            src={user?.imageUrl || undefined} // Display user's profile picture if available
+            icon={!user?.imageUrl ? <UserOutlined /> : undefined}
             style={{ marginRight: 10, backgroundColor: "#1890ff" }}
           />
-          <Text strong>Vishal K.</Text>
+          <Text strong>{user?.fullName || "Admin"}</Text>
           <DownOutlined style={{ marginLeft: 8 }} />
         </motion.div>
       </Dropdown>
