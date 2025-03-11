@@ -1,27 +1,31 @@
-const jwt = require("jsonwebtoken");
-require("dotenv").config();
+const { ClerkExpressWithAuth } = require("@clerk/clerk-sdk-node");
 
 const authenticateAdmin = (allowedRoles = ["admin"]) => {
-  return (req, res, next) => {
-    try {
-      const token = req.header("Authorization");
-      if (!token) {
-        return res.status(403).json({ message: "Access denied. No token provided." });
-      }
+  return ClerkExpressWithAuth((req, res, next) => {
+    const { sessionClaims } = req.auth || {};
 
-      const decoded = jwt.verify(token.replace("Bearer ", ""), process.env.JWT_SECRET);
-
-      // Check if the user has the required role
-      if (!allowedRoles.includes(decoded.role)) {
-        return res.status(403).json({ message: "Access denied. Insufficient permissions." });
-      }
-
-      req.user = decoded;
-      next();
-    } catch (error) {
-      res.status(401).json({ message: "Invalid token." });
+    if (!sessionClaims) {
+      console.warn("🔐 Unauthorized access attempt.");
+      return res.status(401).json({
+        success: false,
+        code: "UNAUTHORIZED",
+        message: "Please log in to access this resource.",
+      });
     }
-  };
+
+    const userRole = sessionClaims.role;
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      console.warn(`🚫 Access denied for role: ${userRole}`);
+      return res.status(403).json({
+        success: false,
+        code: "FORBIDDEN",
+        message: "You don't have permission to access this route.",
+      });
+    }
+
+    req.user = sessionClaims;
+    next();
+  });
 };
 
 module.exports = authenticateAdmin;
