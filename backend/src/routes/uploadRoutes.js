@@ -1,19 +1,34 @@
-const express = require("express");
+// middlewares/upload.js
 const multer = require("multer");
+const path = require("path");
 
-const router = express.Router();
-const upload = multer({ dest: "uploads/" });
-
-router.post("/", upload.single("image"), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ success: false, message: "No file uploaded." });
-  }
-
-  res.json({
-    success: true,
-    imageUrl: `/uploads/${req.file.filename}`,
-    message: "✅ Image uploaded successfully!",
-  });
+// Storage engine with unique file naming
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Folder to save uploaded files
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + "-" + uniqueSuffix + ext);
+  },
 });
 
-module.exports = router;
+// Optional: File filter (accept only images)
+const fileFilter = (req, file, cb) => {
+  const allowedTypes = ["image/jpeg", "image/png", "image/jpg"];
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only .jpg, .jpeg, .png files are allowed"), false);
+  }
+};
+
+// Optional: Limit file size (2MB)
+const upload = multer({
+  storage,
+  fileFilter,
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2 MB
+});
+
+module.exports = upload;
