@@ -91,6 +91,39 @@ router.get("/merged", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch merged users." });
   }
 });
+// ✅ Toggle user role
+router.put("/toggle-role/:userId", async (req, res) => {
+  const { userId } = req.params;
+  const { role } = req.body;
+
+  if (!userId || !role) {
+    return res.status(400).json({ error: "User ID and role are required" });
+  }
+
+  try {
+    // ✅ Update role in Database
+    const { rows } = await pool.query(
+      'UPDATE "Users" SET "role" = $1 WHERE "id" = $2 RETURNING *',
+      [role, userId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // ✅ Update role in Clerk (optional)
+    if (rows[0].clerkId) {
+      await clerkClient.users.updateUser(rows[0].clerkId, {
+        publicMetadata: { role },
+      });
+    }
+
+    res.status(200).json({ message: "✅ Role updated successfully", user: rows[0] });
+  } catch (error) {
+    console.error("❌ Error updating role:", error);
+    res.status(500).json({ error: "Failed to update role." });
+  }
+});
 
 // ✅ Delete user from DB & Clerk
 router.delete("/:userId", async (req, res) => {

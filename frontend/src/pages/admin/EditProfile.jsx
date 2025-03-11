@@ -93,10 +93,10 @@ const EditProfile = () => {
     const formData = {
       firstName: values.firstName,
       lastName: values.lastName,
-      profileImage: image,
+      profileImage: image,  // ✅ Always send the latest image URL
     };
-
-    axios.put("http://localhost:5000/api/user/profile", formData, { withCredentials: true })
+  
+    axios.put("http://localhost:5000/api/users/profile", formData, { withCredentials: true })
       .then(() => {
         message.success("Profile updated successfully");
         navigate("/admin");
@@ -106,7 +106,7 @@ const EditProfile = () => {
         console.error("Update error", error);
       });
   };
-
+  
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f8" }}>
       <Sidebar />

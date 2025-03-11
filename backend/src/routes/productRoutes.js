@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const upload = require("../middlewares/uploadMiddleware");
-const cloudinary = require("../utils/cloudinary");
+const cloudinary = require("../config/cloudinary");
 const productController = require("../controllers/productController");
 const adminAuth = require("../middlewares/Auth"); // Middleware for admin authentication
 

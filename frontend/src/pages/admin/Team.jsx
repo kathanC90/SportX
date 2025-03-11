@@ -46,19 +46,16 @@ const TeamPage = () => {
       message.warning("Invalid user data");
       return;
     }
-  
+
     try {
       const response = await axios.put(
-        `${import.meta.env.VITE_API_URL}/users/toggle-role/${dbId}`
+        `${import.meta.env.VITE_API_URL}/users/toggle-role/${dbId}`,
+        { role: newRole }  // ✅ Sending the new role in the request body
       );
-  
+
       if (response.status === 200) {
         message.success("Role updated successfully");
-        setTeam((prev) =>
-          prev.map((user) =>
-            user.dbId === dbId ? { ...user, role: newRole } : user
-          )
-        );
+        fetchUsers();  // ✅ Refresh the data after role change
       } else {
         message.error("Failed to update role");
       }
@@ -67,8 +64,6 @@ const TeamPage = () => {
       message.error("Failed to update role. Please try again.");
     }
   };
-  
-  
 
   const handleDelete = async (dbId, clerkId) => {
     if (!dbId || !clerkId) return message.warning("Invalid user data");
@@ -101,6 +96,7 @@ const TeamPage = () => {
         >
           <Option value="admin">Admin</Option>
           <Option value="user">User</Option>
+          <Option value="doctor">Doctor</Option> {/* ✅ Added Doctor Role */}
         </Select>
       ),
     },
