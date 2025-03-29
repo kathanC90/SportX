@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../../components/admin/Sidebar";
 import AdminNavbar from "../../components/admin/AdminNavbar";
+import axios from "axios";
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -13,13 +14,43 @@ const AddProduct = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const onFinish = (values) => {
+  // Function to save product to the backend
+  const saveProduct = async (productData) => {
+    try {
+      const formData = new FormData();
+      formData.append("name", productData.name);
+      formData.append("price", productData.price);
+      if (productData.image) {
+        formData.append("image", productData.image); // Append the image file
+      }
+
+      const response = await axios.post("http://localhost:5000/api/products/createproduct", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      return response.data; // Assuming the response contains a success flag
+    } catch (error) {
+      throw new Error("Error saving product");
+    }
+  };
+
+  const onFinish = async (values) => {
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const productData = {
+        name: values.name,
+        price: values.price,
+        image: values.image?.fileList[0]?.originFileObj, // Image from Upload field
+      };
+      await saveProduct(productData);
       message.success("Product added successfully!");
-      setLoading(false);
       navigate("/admin/products"); // Redirect to Products page after adding
-    }, 1500);
+    } catch (error) {
+      message.error("Failed to add product");
+    }
+    setLoading(false);
   };
 
   return (
@@ -32,9 +63,9 @@ const AddProduct = () => {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-white shadow-lg rounded-lg p-6 w-full max-w-2xl"
+            className="w-full max-w-2xl p-6 bg-white rounded-lg shadow-lg"
           >
-            <div className="mb-4 flex items-center justify-between">
+            <div className="flex items-center justify-between mb-4">
               <Title level={3} className="text-gray-800">
                 Add New Product
               </Title>
@@ -52,8 +83,8 @@ const AddProduct = () => {
                 <Input type="number" placeholder="Enter price" />
               </Form.Item>
 
-              <Form.Item label="Upload Product Image" name="image">
-                <Upload beforeUpload={() => false} listType="picture">
+              <Form.Item label="Upload Product Image" name="image" rules={[{ required: true, message: "Please upload an image!" }]}>
+                <Upload beforeUpload={() => false} listType="picture" maxCount={1}>
                   <Button icon={<UploadOutlined />}>Click to Upload</Button>
                 </Upload>
               </Form.Item>
@@ -61,7 +92,7 @@ const AddProduct = () => {
               <Form.Item>
                 <motion.button
                   type="submit"
-                  className="w-full bg-blue-500 text-white py-2 rounded-md flex items-center justify-center gap-2 hover:bg-blue-600 transition-all"
+                  className="flex items-center justify-center w-full gap-2 py-2 text-white transition-all bg-blue-500 rounded-md hover:bg-blue-600"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   disabled={loading}
