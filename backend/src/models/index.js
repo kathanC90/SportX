@@ -1,37 +1,27 @@
-// src/models/index.js
 const fs = require("fs");
 const path = require("path");
-const Sequelize = require("sequelize");
 const sequelize = require("../config/database");
+const { Sequelize, DataTypes } = require("sequelize");
 
 const db = {};
 
+// ✅ Read all model files dynamically
 fs.readdirSync(__dirname)
-  .filter(
-    (file) =>
-      file !== "index.js" &&
-      file.endsWith(".js") &&
-      fs.statSync(path.join(__dirname, file)).isFile()
-  )
+  .filter((file) => file !== "index.js" && file.endsWith(".js"))
   .forEach((file) => {
     const modelPath = path.join(__dirname, file);
-    const modelFn = require(modelPath);
-
-    if (typeof modelFn === "function") {
-      const model = modelFn(sequelize, Sequelize.DataTypes);
-      db[model.name] = model;
-    } else {
-      console.warn(`⚠️ Skipping ${file} - does not export a model function`);
-    }
+    const model = require(modelPath)(sequelize, DataTypes);
+    db[model.name] = model;
   });
 
-// Setup associations if any
+// ✅ Setup model associations
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
   }
 });
 
+// ✅ Attach Sequelize instance
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
