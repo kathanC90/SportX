@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Layout,
   Table,
@@ -23,11 +23,14 @@ const TeamPage = () => {
   const [team, setTeam] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [updatingRole, setUpdatingRole] = useState(null);
 
-  const fetchUsers = async () => {
+  // Fetch users from API
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/users/merged`);
+      console.log("Fetched Users:", res.data); // Debugging
       setTeam(res.data);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -35,52 +38,61 @@ const TeamPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
-  const handleRoleChange = async (clerkId, dbId, newRole) => {
-    if (!clerkId || !dbId) {
+  // Handle role change
+  const handleRoleChange = async (clerkId, id, newRole) => {
+    if (!clerkId || !id) {
       message.warning("Invalid user data");
       return;
     }
 
+    setUpdatingRole(id);
+
     try {
       const response = await axios.put(
-        `${import.meta.env.VITE_API_URL}/users/toggle-role/${dbId}`,
-        { role: newRole }  // ✅ Sending the new role in the request body
+        `${import.meta.env.VITE_API_URL}/users/toggle-role/${id}`,
+        { role: newRole },
+        { headers: { "Content-Type": "application/json" } }
       );
 
       if (response.status === 200) {
         message.success("Role updated successfully");
-        fetchUsers();  // ✅ Refresh the data after role change
+        await fetchUsers();
       } else {
         message.error("Failed to update role");
       }
     } catch (err) {
       console.error("Update role error:", err);
       message.error("Failed to update role. Please try again.");
+    } finally {
+      setUpdatingRole(null);
     }
   };
 
-  const handleDelete = async (dbId, clerkId) => {
-    if (!dbId || !clerkId) return message.warning("Invalid user data");
+  // Handle user deletion
+  const handleDelete = async (id) => {
+    if (!id) return message.warning("Invalid user data");
+
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/users/${dbId}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/users/${id}`);
       message.success("User deleted successfully");
-      setTeam((prev) => prev.filter((user) => user.dbId !== dbId));
+      setTeam((prev) => prev.filter((user) => user.id !== id));
     } catch (err) {
       console.error("Delete error:", err);
       message.error("Failed to delete user");
     }
   };
 
+  // Table columns
   const columns = [
     { title: "Name", dataIndex: "name", key: "name" },
     { title: "Email", dataIndex: "email", key: "email" },
-    { title: "Clerk Status", dataIndex: "clerkStatus", key: "clerkStatus" },
+    { title: "Clerk ID", dataIndex: "clerkId", key: "clerkId" },
     {
       title: "Role",
       dataIndex: "role",
@@ -89,14 +101,13 @@ const TeamPage = () => {
         <Select
           value={role}
           style={{ width: 120 }}
-          onChange={(newRole) =>
-            handleRoleChange(record.clerkId, record.dbId, newRole)
-          }
-          disabled={!record.clerkId || !record.dbId}
+          loading={updatingRole === record.id}
+          onChange={(newRole) => handleRoleChange(record.clerkId, record.id, newRole)}
+          disabled={!record.clerkId || !record.id}
         >
           <Option value="admin">Admin</Option>
           <Option value="user">User</Option>
-          <Option value="doctor">Doctor</Option> {/* ✅ Added Doctor Role */}
+          <Option value="doctor">Doctor</Option>
         </Select>
       ),
     },
@@ -104,10 +115,10 @@ const TeamPage = () => {
       title: "Action",
       key: "action",
       render: (_, record) =>
-        record.dbId ? (
+        record.id ? (
           <Popconfirm
             title="Are you sure you want to delete this user?"
-            onConfirm={() => handleDelete(record.dbId, record.clerkId)}
+            onConfirm={() => handleDelete(record.id)}
             okText="Yes"
             cancelText="No"
           >
@@ -138,7 +149,7 @@ const TeamPage = () => {
                 columns={columns}
                 dataSource={team}
                 loading={loading}
-                rowKey={(record) => record.dbId || record.clerkId}
+                rowKey={(record) => record.id || record.clerkId}
                 pagination={{ pageSize: 6 }}
                 scroll={{ x: "max-content" }}
               />
