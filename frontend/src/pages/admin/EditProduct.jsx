@@ -4,6 +4,7 @@ import { UploadOutlined } from "@ant-design/icons";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/admin/Sidebar";
 import AdminNavbar from "../../components/admin/AdminNavbar";
+import axios from "axios";
 
 const { Content } = Layout;
 
@@ -11,55 +12,77 @@ const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const initialProducts = JSON.parse(localStorage.getItem("products")) || [
-    { id: 1, name: "Cricket Bat", price: "120.00", image: "/images/bat.jpg" },
-    { id: 2, name: "Table Tennis Paddles", price: "60.00", image: "/images/paddles.jpg" },
-    { id: 3, name: "Badminton Shuttlecocks", price: "24.59", image: "/images/shuttlecock.jpg" },
-  ];
+  const [formData, setFormData] = useState({ name: "", price: "", image: null });
+  const [imagePreview, setImagePreview] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const productId = parseInt(id, 10);
-  const existingProduct = initialProducts.find((p) => p.id === productId);
+  useEffect(() => { 
+    const fetchProduct = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/products/getdetail/${id}`);
+        const product = response.data;
+        setFormData({ name: product.name, price: product.price, image: null });
+        setImagePreview(product.image); 
+      } catch (error) {
+        message.error("Failed to fetch product details.");
+        navigate("/admin/products");
+      }
+    };
+    fetchProduct();
+  }, [id, navigate]);
 
-  const [formData, setFormData] = useState(existingProduct || { name: "", price: "", image: "" });
-  const [imagePreview, setImagePreview] = useState(existingProduct?.image || "");
-
-  useEffect(() => {
-    if (!existingProduct) {
-      message.error("Product not found!");
-      navigate("/admin/products");
-    }
-  }, [existingProduct, navigate]);
-
-  const handleImageChange = (info) => {
-    if (info.file.status === "done") {
-      const imageUrl = URL.createObjectURL(info.file.originFileObj);
+  const handleImageChange = ({ file }) => {
+    if (file) {
+      const imageUrl = URL.createObjectURL(file.originFileObj);
       setImagePreview(imageUrl);
-      setFormData((prev) => ({ ...prev, image: imageUrl }));
+      setFormData((prev) => ({ ...prev, image: file.originFileObj }));
     }
   };
 
-  const handleSave = () => {
-    const updatedProducts = initialProducts.map((product) =>
-      product.id === productId ? { ...product, ...formData } : product
-    );
-
-    localStorage.setItem("products", JSON.stringify(updatedProducts));
-
-    message.success("Product updated successfully!");
-    navigate("/admin/products");
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      const updatedProductData = new FormData();
+      updatedProductData.append("name", formData.name);
+      updatedProductData.append("price", formData.price);
+      
+      if (formData.image) {
+        updatedProductData.append("image", formData.image);
+      }
+  
+      await axios.put(`http://localhost:5000/api/products/${id}`, updatedProductData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+  
+      message.success("Product updated successfully!");
+      navigate("/admin/products");
+    } catch (error) {
+      message.error("Failed to update product.");
+    }
+    setLoading(false);
   };
-
+  
   return (
     <Layout style={{ minHeight: "100vh" }}>
       <Sidebar />
       <Layout>
         <AdminNavbar />
         <Content style={{ padding: 24, display: "flex", justifyContent: "center" }}>
-          <div style={{ width: 600, padding: 24, background: "#fff", borderRadius: 10, boxShadow: "0px 4px 10px rgba(0,0,0,0.1)" }}>
+          <div
+            style={{
+              width: 600,
+              padding: 24,
+              background: "#fff",
+              borderRadius: 10,
+              boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
+            }}
+          >
             <h2 style={{ textAlign: "center" }}>Edit Product</h2>
             <div style={{ textAlign: "center", marginBottom: 20 }}>
-              <img src={imagePreview} alt="Product" style={{ width: 80, height: 80, borderRadius: 10 }} />
-              <Upload showUploadList={false} onChange={handleImageChange}>
+              {imagePreview && <img src={imagePreview} alt="Product" style={{ width: 80, height: 80, borderRadius: 10 }} />}
+              <Upload showUploadList={false} beforeUpload={() => false} onChange={handleImageChange}>
                 <Button type="link" icon={<UploadOutlined />}>Edit Photo</Button>
               </Upload>
             </div>
@@ -79,7 +102,13 @@ const EditProduct = () => {
                 />
               </Form.Item>
               <Form.Item>
-                <Button type="primary" onClick={handleSave} block>
+                <Button
+                  type="primary"
+                  onClick={handleSave}
+                  block
+                  loading={loading}
+                  disabled={loading}
+                >
                   Save Changes
                 </Button>
                 <Button style={{ marginTop: 8 }} onClick={() => navigate("/admin/products")} block>
