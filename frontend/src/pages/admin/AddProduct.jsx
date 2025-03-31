@@ -12,45 +12,61 @@ const { Title } = Typography;
 
 const AddProduct = () => {
   const [loading, setLoading] = useState(false);
+  const [fileList, setFileList] = useState([]);
   const navigate = useNavigate();
 
-  // Function to save product to the backend
-  const saveProduct = async (productData) => {
+  // ✅ Form Submit Handler
+  const onFinish = async (values) => {
+    setLoading(true);
     try {
-      const formData = new FormData();
-      formData.append("name", productData.name);
-      formData.append("price", productData.price);
-      if (productData.image) {
-        formData.append("image", productData.image); // Append the image file
+      if (fileList.length === 0) {
+        message.error("Please upload a product image!");
+        setLoading(false);
+        return;
       }
 
-      const response = await axios.post("http://localhost:5000/api/products/createproduct", formData, {
+      // ✅ Ensure productId is assigned
+      if (!values.productId) {
+        values.productId = `PROD-${Date.now()}`; // Generate a temporary ID (or fetch from DB)
+      }
+
+      const formData = new FormData();
+
+      // ✅ Append all text fields
+      Object.keys(values).forEach((key) => {
+        formData.append(key, values[key]);
+      });
+
+      // ✅ Append image correctly
+      if (fileList[0]?.originFileObj) {
+        formData.append("image", fileList[0].originFileObj);
+      } else {
+        message.error("Invalid image file!");
+        setLoading(false);
+        return;
+      }
+
+      console.log("🟡 FormData Key: productId, Value:", values.productId);
+
+      // ✅ Debugging: Log FormData
+      for (let pair of formData.entries()) {
+        console.log(`🟡 FormData Key: ${pair[0]}, Value:`, pair[1]);
+      }
+
+      await axios.post("http://localhost:5000/api/products/createproduct", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-
-      return response.data; // Assuming the response contains a success flag
-    } catch (error) {
-      throw new Error("Error saving product");
-    }
-  };
-
-  const onFinish = async (values) => {
-    setLoading(true);
-    try {
-      const productData = {
-        name: values.name,
-        price: values.price,
-        image: values.image?.fileList[0]?.originFileObj, // Image from Upload field
-      };
-      await saveProduct(productData);
+      
       message.success("Product added successfully!");
-      navigate("/admin/products"); // Redirect to Products page after adding
+      navigate("/admin/products");
     } catch (error) {
+      console.error("❌ Error submitting form:", error);
       message.error("Failed to add product");
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   return (
@@ -66,25 +82,67 @@ const AddProduct = () => {
             className="w-full max-w-2xl p-6 bg-white rounded-lg shadow-lg"
           >
             <div className="flex items-center justify-between mb-4">
-              <Title level={3} className="text-gray-800">
-                Add New Product
-              </Title>
+              <Title level={3} className="text-gray-800">Add New Product</Title>
               <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/admin/products")}>
                 Back
               </Button>
             </div>
 
-            <Form layout="vertical" onFinish={onFinish}>
+            <Form layout="vertical" onFinish={onFinish} initialValues={{ productId: "", price: "", name: "" }}>
+              {/* ✅ Hidden Input for productId */}
+              <Form.Item name="productId" hidden>
+                <Input />
+              </Form.Item>
+
               <Form.Item label="Product Name" name="name" rules={[{ required: true, message: "Please enter product name!" }]}>
                 <Input placeholder="Enter product name" />
               </Form.Item>
 
-              <Form.Item label="Price ($)" name="price" rules={[{ required: true, message: "Please enter price!" }]}>
-                <Input type="number" placeholder="Enter price" />
+              <Form.Item label="Description" name="description" rules={[{ required: true, message: "Please enter product description!" }]}>
+                <Input.TextArea placeholder="Enter product description" />
               </Form.Item>
 
-              <Form.Item label="Upload Product Image" name="image" rules={[{ required: true, message: "Please upload an image!" }]}>
-                <Upload beforeUpload={() => false} listType="picture" maxCount={1}>
+              <Form.Item label="Category" name="category" rules={[{ required: true, message: "Please enter category!" }]}>
+                <Input placeholder="Enter category" />
+              </Form.Item>
+
+              <Form.Item label="Brand" name="brand" rules={[{ required: true, message: "Please enter brand!" }]}>
+                <Input placeholder="Enter brand" />
+              </Form.Item>
+
+              <Form.Item label="Color" name="color" rules={[{ required: true, message: "Please enter color!" }]}>
+                <Input placeholder="Enter color" />
+              </Form.Item>
+
+              <Form.Item label="Size" name="size" rules={[{ required: true, message: "Please enter size!" }]}>
+                <Input placeholder="Enter size" />
+              </Form.Item>
+
+              <Form.Item label="Material" name="material" rules={[{ required: true, message: "Please enter material!" }]}>
+                <Input placeholder="Enter material" />
+              </Form.Item>
+
+              <Form.Item label="Price ($)" name="price" rules={[{ required: true, message: "Please enter price!" }]}>
+                <Input type="number" placeholder="Enter price" min="0" step="0.01" />
+              </Form.Item>
+
+              <Form.Item label="Rating" name="rating" rules={[{ required: true, message: "Please enter rating!" }]}>
+                <Input type="number" placeholder="Enter rating" min="0" max="5" step="0.1" />
+              </Form.Item>
+
+              {/* ✅ File Upload Component */}
+              <Form.Item label="Upload Product Image" required>
+                <Upload
+                  fileList={fileList}
+                  beforeUpload={() => false} // Prevents auto upload
+                  listType="picture"
+                  maxCount={1}
+                  accept="image/png, image/jpeg"
+                  onChange={({ fileList }) => {
+                    console.log("🟡 File Selected:", fileList);
+                    setFileList(fileList);
+                  }}
+                >
                   <Button icon={<UploadOutlined />}>Click to Upload</Button>
                 </Upload>
               </Form.Item>

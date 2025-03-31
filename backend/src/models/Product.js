@@ -13,6 +13,30 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true, // ✅ Allow NULL initially to avoid migration errors
+      },
+      category: {
+        type: DataTypes.STRING,
+        allowNull: true, 
+      },
+      brand: {
+        type: DataTypes.STRING,
+        allowNull: true, 
+      },
+      color: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      size: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      material: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       price: {
         type: DataTypes.FLOAT,
         allowNull: false,
@@ -21,10 +45,24 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      rating: {
+        type: DataTypes.FLOAT,
+        allowNull: true,
+        defaultValue: 0,
+        validate: {
+          min: 0,
+          max: 5,
+        },
+      },
+      reviews: {
+        type: DataTypes.ARRAY(DataTypes.JSON),
+        allowNull: true,
+        defaultValue: [],
+      },
     },
     {
       timestamps: true,
-      tableName: "Products", // Ensure it matches your actual table name
+      tableName: "Products",
     }
   );
 

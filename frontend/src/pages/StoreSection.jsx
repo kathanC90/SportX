@@ -5,6 +5,7 @@ import axios from "axios";
 import Navbar from "../components/Navbar";
 import Filters from "../components/Filters";
 import Footer from "../components/Footer";
+import { useCart } from "../context/CartContext"; // ✅ Import cart context
 
 const StoreSection = () => {
   const [products, setProducts] = useState([]);
@@ -13,9 +14,9 @@ const StoreSection = () => {
   const [selectedFilters, setSelectedFilters] = useState({
     price: 100,
     color: "",
-    gender: "",
-    size: "",
   });
+
+  const { addToCart } = useCart(); // ✅ Get addToCart function
 
   // Fetch products from backend
   useEffect(() => {
@@ -43,9 +44,7 @@ const StoreSection = () => {
   const filteredProducts = products.filter(
     (product) =>
       product.price <= selectedFilters.price &&
-      (selectedFilters.color === "" || product.color === selectedFilters.color) &&
-      (selectedFilters.gender === "" || product.gender === selectedFilters.gender) &&
-      (selectedFilters.size === "" || product.size === selectedFilters.size)
+      (selectedFilters.color === "" || product.color === selectedFilters.color)
   );
 
   return (
@@ -62,34 +61,36 @@ const StoreSection = () => {
           ) : filteredProducts.length > 0 ? (
             filteredProducts.map((product) => (
               <motion.div
-  key={product.id}
-  className="flex flex-col h-full p-4 bg-white rounded-lg shadow-md cursor-pointer hover:shadow-lg"
-  whileHover={{ scale: 1.05 }}
->
-  <Link to={`/productdetail/${product.id}`} className="flex flex-col flex-grow">
-    <img
-      src={product.image || "/placeholder.jpg"}
-      alt={product.name}
-      className="object-cover w-full h-40 rounded-md"
-    />
-    <div className="flex-grow">
-      <h3 className="mt-2 text-lg font-bold">{product.name}</h3>
-      <p className="text-gray-600">${product.price}</p>
-    </div>
-  </Link>
-  <div className="flex gap-2 mt-2">
-    <button className="w-full py-2 text-white bg-black rounded-md hover:bg-gray-800">
-      Add to Cart
-    </button>
-    <Link
-      to={`/productdetail/${product.id}`}
-      className="w-full py-2 text-center text-white bg-gray-700 rounded-md hover:bg-gray-600"
-    >
-      View
-    </Link>
-  </div>
-</motion.div>
+                key={product.id}
+                className="flex flex-col h-full p-4 bg-white rounded-lg shadow-md cursor-pointer hover:shadow-lg"
+                whileHover={{ scale: 1.05 }}
+              >
+                <Link to={`/productdetail/${product.id}`} className="flex flex-col flex-grow">
+                  <img
+                    src={product.image || "/placeholder.jpg"} // ✅ Fallback image
+                    alt={product.name}
+                    className="object-cover w-full h-40 rounded-md"
+                  />
+                  <h3 className="mt-2 text-lg font-bold">{product.name}</h3>
+                  <p className="text-gray-600">${product.price}</p>
+                </Link>
 
+                {/* Buttons */}
+                <div className="flex gap-2 mt-2">
+                  <button
+                    className="w-full py-2 text-white bg-black rounded-md hover:bg-gray-800"
+                    onClick={() => addToCart(product)} // ✅ Functional Add to Cart
+                  >
+                    Add to Cart
+                  </button>
+                  <Link
+                    to={`/productdetail/${product.id}`}
+                    className="w-full py-2 text-center text-white bg-gray-700 rounded-md hover:bg-gray-600"
+                  >
+                    View
+                  </Link>
+                </div>
+              </motion.div>
             ))
           ) : (
             <p className="text-center text-gray-500 col-span-full">No products found. Try adjusting your filters.</p>

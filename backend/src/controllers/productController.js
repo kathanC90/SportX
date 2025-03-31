@@ -29,13 +29,10 @@ exports.getProductById = async (req, res) => {
 // Create a new product with image upload
 exports.createProduct = async (req, res) => {
   try {
-    console.log("Received file:", req.file); // Debugging
-
     if (!req.file) {
       return res.status(400).json({ error: "Image file is required." });
     }
 
-    // Convert buffer to stream for Cloudinary upload
     const uploadStream = cloudinary.uploader.upload_stream(
       { resource_type: "image" },
       async (error, result) => {
@@ -48,25 +45,30 @@ exports.createProduct = async (req, res) => {
           return res.status(500).json({ error: "Cloudinary failed to provide an image URL." });
         }
 
-        const { name, price } = req.body;
+        const { name, description, category, brand, color, size, material, price, rating, reviews } = req.body;
         if (!name || !price) {
           return res.status(400).json({ error: "Name and price are required" });
         }
 
-        // Create a new product inside an async function
-        (async () => {
-          try {
-            const product = await Product.create({
-              name,
-              price,
-              image: result.secure_url,
-            });
-            res.status(201).json(product);
-          } catch (dbError) {
-            console.error("❌ Database Error:", dbError);
-            res.status(500).json({ error: "Failed to create product", details: dbError.message });
-          }
-        })();
+        try {
+          const product = await Product.create({
+            name,
+            description,
+            category,
+            brand,
+            color,
+            size,
+            material,
+            price,
+            image: result.secure_url,
+            rating: rating || 0,
+            reviews: reviews ? JSON.parse(reviews) : [],
+          });
+          res.status(201).json(product);
+        } catch (dbError) {
+          console.error("❌ Database Error:", dbError);
+          res.status(500).json({ error: "Failed to create product", details: dbError.message });
+        }
       }
     );
 
@@ -80,11 +82,24 @@ exports.createProduct = async (req, res) => {
 // Update a product
 exports.updateProduct = async (req, res) => {
   try {
-    const { name, price, image } = req.body;
     const product = await Product.findByPk(req.params.id);
     if (!product) return res.status(404).json({ error: "Product not found" });
 
-    await product.update({ name, price, image });
+    const { name, description, category, brand, color, size, material, price, rating, reviews } = req.body;
+
+    await product.update({
+      name,
+      description,
+      category,
+      brand,
+      color,
+      size,
+      material,
+      price,
+      rating,
+      reviews: reviews ? JSON.parse(reviews) : product.reviews,
+    });
+
     res.json(product);
   } catch (error) {
     console.error("❌ Error updating product:", error);

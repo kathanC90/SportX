@@ -32,7 +32,7 @@ const ProductDetail = () => {
   const handleAddToCart = () => {
     if (product) {
       addToCart(product);
-      alert("Added to cart!"); // ✅ Notify user instead of redirecting
+      alert("Added to cart!");
     }
   };
 
@@ -47,6 +47,26 @@ const ProductDetail = () => {
         <h1 className="mt-4 text-3xl font-bold">{product.name}</h1>
         <p className="mt-2 text-xl">${product.price}</p>
         <p className="mt-4 text-gray-600">{product.description}</p>
+        <p className="mt-2 text-gray-700">Category: {product.category}</p>
+        <p className="mt-1 text-gray-700">Brand: {product.brand}</p>
+        <p className="mt-1 text-gray-700">Color: {product.color}</p>
+        <p className="mt-1 text-gray-700">Size: {product.size}</p>
+        <p className="mt-1 text-gray-700">Material: {product.material}</p>
+        <p className="mt-2 text-yellow-500">Rating: {product.rating} ⭐</p>
+        <div className="mt-4">
+          <h3 className="text-lg font-semibold">Reviews:</h3>
+          <ul className="mt-2 space-y-2">
+            {product.reviews && product.reviews.length > 0 ? (
+              product.reviews.map((review, index) => (
+                <li key={index} className="p-2 bg-gray-100 rounded-md">
+                  {review}
+                </li>
+              ))
+            ) : (
+              <p className="text-gray-500">No reviews yet.</p>
+            )}
+          </ul>
+        </div>
         <button className="w-full py-3 mt-6 text-white bg-black rounded-md" onClick={handleAddToCart}>
           Add to Cart
         </button>

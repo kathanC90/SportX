@@ -1,114 +1,71 @@
 import React from "react";
+import { motion } from "framer-motion";
 
 const Filters = ({ selectedFilters, onFilterChange }) => {
   return (
     <aside className="w-1/4 p-4 bg-white rounded-lg shadow-lg">
       <h2 className="mb-4 text-xl font-bold">Filters</h2>
-      
+
       {/* Price Range */}
-      <label className="block mb-3">Price Range: ${selectedFilters.price}
-        <input
+      <motion.label
+        className="block mb-3"
+        initial={{ opacity: 0.7 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+      >
+        Price Range: 
+        <motion.span 
+          className="ml-2 font-semibold text-blue-600"
+          animate={{ scale: [1, 1.2, 1] }}
+          transition={{ duration: 0.3 }}
+        >
+          ${selectedFilters.price}
+        </motion.span>
+        <motion.input
           type="range"
           min="10"
           max="500"
           step="10"
           value={selectedFilters.price}
           onChange={(e) => onFilterChange("price", e.target.value)}
-          className="w-full"
+          className="w-full mt-1 cursor-pointer"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         />
-      </label>
-      
-      {/* Color */}
-      <label className="block mb-3">Color
-        <select
-          className="w-full p-2 border rounded"
-          value={selectedFilters.color}
-          onChange={(e) => onFilterChange("color", e.target.value)}
+      </motion.label>
+
+      {/* Dropdowns */}
+      {[
+        { label: "Color", key: "color", options: ["Red", "Blue", "White", "Brown", "Black", "Green"] },
+        { label: "Gender", key: "gender", options: ["Men", "Women", "Unisex"] },
+        { label: "Size", key: "size", options: ["XS", "S", "M", "L", "XL"] },
+        { label: "Brand", key: "brand", options: ["Nike", "Adidas", "Puma", "Reebok"] },
+        { label: "Material", key: "material", options: ["Cotton", "Leather", "Polyester", "Denim"] },
+        { label: "Category", key: "category", options: ["Shoes", "Clothing", "Accessories", "Bags"] },
+      ].map(({ label, key, options }) => (
+        <motion.label
+          key={key}
+          className="block mb-3"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.3 }}
         >
-          <option value="">All</option>
-          <option value="Red">Red</option>
-          <option value="Blue">Blue</option>
-          <option value="White">White</option>
-          <option value="Brown">Brown</option>
-          <option value="Black">Black</option>
-          <option value="Green">Green</option>
-        </select>
-      </label>
-      
-      {/* Gender */}
-      <label className="block mb-3">Gender
-        <select
-          className="w-full p-2 border rounded"
-          value={selectedFilters.gender}
-          onChange={(e) => onFilterChange("gender", e.target.value)}
-        >
-          <option value="">All</option>
-          <option value="Men">Men</option>
-          <option value="Women">Women</option>
-          <option value="Unisex">Unisex</option>
-        </select>
-      </label>
-      
-      {/* Size */}
-      <label className="block mb-3">Size
-        <select
-          className="w-full p-2 border rounded"
-          value={selectedFilters.size}
-          onChange={(e) => onFilterChange("size", e.target.value)}
-        >
-          <option value="">All</option>
-          <option value="XS">XS</option>
-          <option value="S">S</option>
-          <option value="M">M</option>
-          <option value="L">L</option>
-          <option value="XL">XL</option>
-        </select>
-      </label>
-      
-      {/* Brand */}
-      <label className="block mb-3">Brand
-        <select
-          className="w-full p-2 border rounded"
-          value={selectedFilters.brand}
-          onChange={(e) => onFilterChange("brand", e.target.value)}
-        >
-          <option value="">All</option>
-          <option value="Nike">Nike</option>
-          <option value="Adidas">Adidas</option>
-          <option value="Puma">Puma</option>
-          <option value="Reebok">Reebok</option>
-        </select>
-      </label>
-      
-      {/* Material */}
-      <label className="block mb-3">Material
-        <select
-          className="w-full p-2 border rounded"
-          value={selectedFilters.material}
-          onChange={(e) => onFilterChange("material", e.target.value)}
-        >
-          <option value="">All</option>
-          <option value="Cotton">Cotton</option>
-          <option value="Leather">Leather</option>
-          <option value="Polyester">Polyester</option>
-          <option value="Denim">Denim</option>
-        </select>
-      </label>
-      
-      {/* Category */}
-      <label className="block">Category
-        <select
-          className="w-full p-2 border rounded"
-          value={selectedFilters.category}
-          onChange={(e) => onFilterChange("category", e.target.value)}
-        >
-          <option value="">All</option>
-          <option value="Shoes">Shoes</option>
-          <option value="Clothing">Clothing</option>
-          <option value="Accessories">Accessories</option>
-          <option value="Bags">Bags</option>
-        </select>
-      </label>
+          {label}
+          <motion.select
+            className="w-full p-2 mt-1 border rounded cursor-pointer focus:ring-2 focus:ring-blue-500"
+            value={selectedFilters[key]}
+            onChange={(e) => onFilterChange(key, e.target.value)}
+            whileFocus={{ borderColor: "#2563eb", scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <option value="">All</option>
+            {options.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </motion.select>
+        </motion.label>
+      ))}
     </aside>
   );
 };

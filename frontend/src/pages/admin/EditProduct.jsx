@@ -1,61 +1,88 @@
 import React, { useState, useEffect } from "react";
-import { Layout, Form, Input, Button, Upload, message } from "antd";
-import { UploadOutlined } from "@ant-design/icons";
+import { Layout, Form, Input, Button, Upload, Typography, message } from "antd";
+import { UploadOutlined, SaveOutlined, ArrowLeftOutlined } from "@ant-design/icons";
+import { motion } from "framer-motion";
 import { useParams, useNavigate } from "react-router-dom";
 import Sidebar from "../../components/admin/Sidebar";
 import AdminNavbar from "../../components/admin/AdminNavbar";
 import axios from "axios";
 
 const { Content } = Layout;
+const { Title } = Typography;
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  const [formData, setFormData] = useState({ name: "", price: "", image: null });
-  const [imagePreview, setImagePreview] = useState("");
+  const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  const [fileList, setFileList] = useState([]);
+  const [imagePreview, setImagePreview] = useState("");
 
-  useEffect(() => { 
+  useEffect(() => {
     const fetchProduct = async () => {
       try {
         const response = await axios.get(`http://localhost:5000/api/products/getdetail/${id}`);
         const product = response.data;
-        setFormData({ name: product.name, price: product.price, image: null });
-        setImagePreview(product.image); 
+
+        // ✅ Ensure ID is set properly
+        form.setFieldsValue({
+          id: product.id || product.productId,
+          name: product.name,
+          description: product.description,
+          category: product.category,
+          brand: product.brand,
+          color: product.color,
+          size: product.size,
+          material: product.material,
+          price: product.price,
+          rating: product.rating,
+        });
+
+        // ✅ Set existing image preview
+        if (product.image) {
+          setImagePreview(product.image);
+        }
       } catch (error) {
         message.error("Failed to fetch product details.");
         navigate("/admin/products");
       }
     };
+
     fetchProduct();
-  }, [id, navigate]);
+  }, [id, navigate, form]);
 
   const handleImageChange = ({ file }) => {
-    if (file) {
+    console.log("Selected image file:", file);
+    
+    if (file && file.originFileObj) {
       const imageUrl = URL.createObjectURL(file.originFileObj);
       setImagePreview(imageUrl);
-      setFormData((prev) => ({ ...prev, image: file.originFileObj }));
+      setFileList([file]); // ✅ Store file in fileList
+    } else {
+      message.error("Please select a valid image.");
     }
   };
 
-  const handleSave = async () => {
+  const onFinish = async (values) => {
     setLoading(true);
     try {
-      const updatedProductData = new FormData();
-      updatedProductData.append("name", formData.name);
-      updatedProductData.append("price", formData.price);
-      
-      if (formData.image) {
-        updatedProductData.append("image", formData.image);
+      const formData = new FormData();
+      Object.keys(values).forEach((key) => {
+        if (values[key] !== null && values[key] !== "") {
+          formData.append(key, values[key]);
+        }
+      });
+
+      if (fileList.length > 0) {
+        formData.append("image", fileList[0].originFileObj);
       }
-  
-      await axios.put(`http://localhost:5000/api/products/${id}`, updatedProductData, {
+
+      await axios.put(`http://localhost:5000/api/products/${id}`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-  
+
       message.success("Product updated successfully!");
       navigate("/admin/products");
     } catch (error) {
@@ -63,60 +90,71 @@ const EditProduct = () => {
     }
     setLoading(false);
   };
-  
+
   return (
-    <Layout style={{ minHeight: "100vh" }}>
+    <Layout style={{ minHeight: "100vh", background: "#f4f6f8" }}>
       <Sidebar />
       <Layout>
         <AdminNavbar />
         <Content style={{ padding: 24, display: "flex", justifyContent: "center" }}>
-          <div
-            style={{
-              width: 600,
-              padding: 24,
-              background: "#fff",
-              borderRadius: 10,
-              boxShadow: "0px 4px 10px rgba(0,0,0,0.1)",
-            }}
-          >
-            <h2 style={{ textAlign: "center" }}>Edit Product</h2>
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
-              {imagePreview && <img src={imagePreview} alt="Product" style={{ width: 80, height: 80, borderRadius: 10 }} />}
-              <Upload showUploadList={false} beforeUpload={() => false} onChange={handleImageChange}>
-                <Button type="link" icon={<UploadOutlined />}>Edit Photo</Button>
-              </Upload>
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}
+            className="w-full max-w-2xl p-6 bg-white rounded-lg shadow-lg">
+            <div className="flex items-center justify-between mb-4">
+              <Title level={3} className="text-gray-800">Edit Product</Title>
+              <Button icon={<ArrowLeftOutlined />} onClick={() => navigate("/admin/products")}>
+                Back
+              </Button>
             </div>
-            <Form layout="vertical">
-              <Form.Item label="Product Name">
-                <Input
-                  value={formData.name}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
-                  placeholder="Enter product name"
-                />
+
+            <Form form={form} layout="vertical" onFinish={onFinish}>
+              <Form.Item label="Product ID" name="id">
+                <Input disabled />
               </Form.Item>
-              <Form.Item label="Price ($)">
-                <Input
-                  value={formData.price}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, price: e.target.value }))}
-                  placeholder="Enter price"
-                />
+              <Form.Item label="Product Name" name="name" rules={[{ required: true, message: "Please enter product name!" }]}>
+                <Input placeholder="Enter product name" />
               </Form.Item>
+              <Form.Item label="Description" name="description" rules={[{ required: true, message: "Please enter description!" }]}>
+                <Input.TextArea placeholder="Enter product description" />
+              </Form.Item>
+              <Form.Item label="Category" name="category">
+                <Input placeholder="Enter category" />
+              </Form.Item>
+              <Form.Item label="Brand" name="brand">
+                <Input placeholder="Enter brand" />
+              </Form.Item>
+              <Form.Item label="Color" name="color">
+                <Input placeholder="Enter color" />
+              </Form.Item>
+              <Form.Item label="Size" name="size">
+                <Input placeholder="Enter size" />
+              </Form.Item>
+              <Form.Item label="Material" name="material">
+                <Input placeholder="Enter material" />
+              </Form.Item>
+              <Form.Item label="Price" name="price">
+                <Input type="number" placeholder="Enter price" min="0" />
+              </Form.Item>
+              <Form.Item label="Rating" name="rating">
+                <Input type="number" disabled />
+              </Form.Item>
+
+              <Form.Item label="Product Image">
+                <div className="text-center mb-3">
+                  {imagePreview && <img src={imagePreview} alt="Product" style={{ width: 80, height: 80, borderRadius: 10 }} />}
+                </div>
+                <Upload showUploadList={false} beforeUpload={() => false} onChange={handleImageChange}>
+                  <Button icon={<UploadOutlined />}>Upload New Image</Button>
+                </Upload>
+              </Form.Item>
+
               <Form.Item>
-                <Button
-                  type="primary"
-                  onClick={handleSave}
-                  block
-                  loading={loading}
-                  disabled={loading}
-                >
-                  Save Changes
-                </Button>
-                <Button style={{ marginTop: 8 }} onClick={() => navigate("/admin/products")} block>
-                  Cancel
-                </Button>
+                <motion.button type="submit" className="w-full py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} disabled={loading}>
+                  <SaveOutlined /> {loading ? "Saving..." : "Save Changes"}
+                </motion.button>
               </Form.Item>
             </Form>
-          </div>
+          </motion.div>
         </Content>
       </Layout>
     </Layout>
