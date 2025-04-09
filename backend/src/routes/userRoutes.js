@@ -1,9 +1,9 @@
 const express = require("express");
 const { clerkClient } = require("@clerk/clerk-sdk-node");
 const { Pool } = require("pg");
-const { v4: uuidv4 } = require("uuid");
 const { uploadImage } = require("../controllers/uploadController");
 const uploadMiddleware = require("../middlewares/uploadMiddleware");
+const { User } = require("../models");
 
 const router = express.Router();
 
@@ -15,106 +15,117 @@ const pool = new Pool({
   port: 5432,
 });
 
+// Upload image route
 router.post("/upload-image", uploadMiddleware.single("image"), uploadImage);
+
+// Test route
 router.get("/", (req, res) => res.send("✅ Users API Working!"));
 
+// Get merged users
 router.get("/merged", async (req, res) => {
   try {
-    const { rows: dbUsers } = await pool.query('SELECT * FROM "Users"');
+    const dbUsers = await User.findAll();
     const clerkUsersResponse = await clerkClient.users.getUserList();
     const clerkUsers = clerkUsersResponse?.data || [];
-    
-    const clerkUserMap = {};
-    clerkUsers.forEach((user) => {
-      const email = user.emailAddresses?.[0]?.emailAddress;
-      if (email) clerkUserMap[email] = user;
-    });
-    
-    const mergedUsers = [];
-    for (const dbUser of dbUsers) {
-      const clerkUser = clerkUserMap[dbUser.email];
-      if (clerkUser && !dbUser.clerkId) {
-        await pool.query('UPDATE "Users" SET "clerkId" = $1 WHERE "id" = $2', [clerkUser.id, dbUser.id]);
-        dbUser.clerkId = clerkUser.id;
+
+    const dbClerkIds = dbUsers.map((u) => u.clerkId);
+    const newSyncedUsers = [];
+
+    for (const clerkUser of clerkUsers) {
+      const { id: clerkId, emailAddresses, firstName, lastName, imageUrl } = clerkUser;
+      const email = emailAddresses?.[0]?.emailAddress || null;
+      const name = `${firstName || ""} ${lastName || ""}`.trim();
+      const profileImage = imageUrl;
+
+      if (!dbClerkIds.includes(clerkId)) {
+        // Add missing Clerk user to DB
+        const newUser = await User.create({
+          name: name || "No Name",
+          email,
+          role: "user",
+          clerkId,
+          profileImage: profileImage || undefined,
+        });
+        newSyncedUsers.push(newUser);
       }
-      mergedUsers.push({
-        id: dbUser.id,
-        email: dbUser.email,
-        name: dbUser.name,
-        role: dbUser.role,
-        createdAt: dbUser.createdAt,
-        clerkId: dbUser.clerkId || null,
-        clerkStatus: dbUser.clerkId ? "✔️ Active in Clerk" : "❌ Not Found in Clerk",
-      });
-      delete clerkUserMap[dbUser.email];
     }
-    
-    await Promise.all(
-      Object.values(clerkUserMap).map(async (clerkUser) => {
-        const generatedUuid = uuidv4();
-        const { rows } = await pool.query(
-          `INSERT INTO "Users" (id, name, email, role, "clerkId", "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
-           ON CONFLICT (email)
-           DO UPDATE SET "clerkId" = EXCLUDED."clerkId", "updatedAt" = NOW()
-           RETURNING *;`,
-          [
-            generatedUuid,
-            `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim(),
-            clerkUser.emailAddresses?.[0]?.emailAddress,
-            clerkUser.publicMetadata?.role || "user",
-            clerkUser.id,
-          ]
-        );
-        if (rows.length > 0) {
-          mergedUsers.push({
-            id: rows[0].id,
-            email: rows[0].email,
-            name: rows[0].name,
-            role: rows[0].role,
-            createdAt: rows[0].createdAt,
-            clerkId: rows[0].clerkId,
-            clerkStatus: "✔️ Automatically Added",
-          });
-        }
-      })
-    );
-    res.status(200).json(mergedUsers);
+
+    // Re-fetch complete DB users after sync
+    const updatedDbUsers = await User.findAll();
+
+    // Merge DB with Clerk info for display
+    const mergedUsers = updatedDbUsers.map((dbUser) => {
+      const clerkUser = clerkUsers.find((cu) => cu.id === dbUser.clerkId);
+      return {
+        id: dbUser.id,
+        name: `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim() || dbUser.name,
+        email: clerkUser?.emailAddresses?.[0]?.emailAddress || dbUser.email,
+        role: dbUser.role,
+        clerkId: dbUser.clerkId,
+        profileImage: clerkUser?.imageUrl || dbUser.profileImage,
+        createdAt: dbUser.createdAt,
+        updatedAt: dbUser.updatedAt,
+      };
+    });
+
+    res.json(mergedUsers);
   } catch (error) {
-    res.status(500).json({ error: "Failed to fetch merged users." });
+    console.error("Error merging Clerk and DB users:", error);
+    res.status(500).json({ message: "Failed to merge users." });
   }
 });
 
+
+// Toggle role between admin and user
 router.put("/toggle-role/:userId", async (req, res) => {
   const { userId } = req.params;
-  const { role } = req.body;
-  if (!userId || !role) return res.status(400).json({ error: "User ID and role are required" });
+
   try {
-    const { rows } = await pool.query('UPDATE "Users" SET "role" = $1 WHERE "id" = $2 RETURNING *', [role, userId]);
-    if (!rows.length) return res.status(404).json({ error: "User not found" });
-    if (rows[0].clerkId) {
-      await clerkClient.users.updateUser(rows[0].clerkId, { publicMetadata: { role } });
+    // 1. Fetch DB user
+    const { rows } = await pool.query('SELECT * FROM "Users" WHERE "id" = $1', [userId]);
+    if (!rows.length) return res.status(404).json({ error: "User not found in DB" });
+
+    const dbUser = rows[0];
+
+    // 2. Determine new role
+    const newRole = dbUser.role === "admin" ? "user" : "admin";
+
+    // 3. Update DB role
+    await pool.query('UPDATE "Users" SET "role" = $1 WHERE "id" = $2', [newRole, userId]);
+
+    // 4. Find matching Clerk user by email
+    const clerkUsersResponse = await clerkClient.users.getUserList({ emailAddress: [dbUser.email] });
+    const clerkUser = clerkUsersResponse.data?.[0];
+
+    // 5. Update Clerk role if user found
+    if (clerkUser) {
+      await clerkClient.users.updateUser(clerkUser.id, {
+        publicMetadata: { role: newRole },
+      });
     }
-    res.status(200).json({ message: "✅ Role updated successfully", user: rows[0] });
+
+    res.status(200).json({ message: "✅ Role toggled successfully", newRole });
   } catch (error) {
-    res.status(500).json({ error: "Failed to update role." });
+    console.error("Toggle role error:", error);
+    res.status(500).json({ error: "Failed to toggle role" });
   }
 });
 
-router.delete("/:userId", async (req, res) => {
-  const { userId } = req.params;
+// Delete user by Clerk ID
+router.delete("/:clerkId", async (req, res) => {
+  const { clerkId } = req.params;
+
   try {
-    const { rows } = await pool.query('SELECT * FROM "Users" WHERE id = $1', [userId]);
-    if (!rows.length) return res.status(404).json({ error: "User not found" });
-    const user = rows[0];
-    if (user.clerkId) {
-      await clerkClient.users.deleteUser(user.clerkId);
-    }
-    await pool.query('DELETE FROM "Users" WHERE id = $1', [userId]);
-    const { rows: updatedUsers } = await pool.query('SELECT * FROM "Users"');
-    res.status(200).json({ message: "✅ User deleted successfully", users: updatedUsers });
+    // 1. Delete from Clerk
+    await clerkClient.users.deleteUser(clerkId);
+
+    // 2. Delete from DB
+    await User.destroy({ where: { clerkId } });
+
+    res.status(200).json({ message: "User deleted from Clerk and DB" });
   } catch (error) {
-    res.status(500).json({ error: "Failed to delete user." });
+    console.error("Delete error:", error);
+    res.status(500).json({ message: "Failed to delete user" });
   }
 });
 

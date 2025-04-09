@@ -27,16 +27,18 @@ const Sidebar = () => {
           gap: "12px" 
         }}
       >
+        <br />
+        <br />
         <Image 
-          src="/images/sportx-logo.png" 
+          src="/src/assets/images/logo.jpg" 
           alt="SportX Logo" 
-          width={40} 
-          height={40} 
+          width={150} 
+          height={20} 
           preview={false} 
-          style={{ borderRadius: "50%" }}
+          style={{ borderRadius: "" }}
         />
         
-      <div className="logo" style={{ padding: 10, fontSize: 20, fontWeight: "bold" }}>SPORT X</div>
+      <div className="logo" style={{ padding: 10, fontSize: 20, fontWeight: "bold" }}> </div>
       </div>
 
       <Menu mode="vertical" selectedKeys={[location.pathname]}>

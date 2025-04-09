@@ -9,6 +9,7 @@ import {
   Button,
   Popconfirm,
   message,
+  Empty,
 } from "antd";
 import { motion } from "framer-motion";
 import axios from "axios";
@@ -25,16 +26,15 @@ const TeamPage = () => {
   const [error, setError] = useState(null);
   const [updatingRole, setUpdatingRole] = useState(null);
 
-  // Fetch users from API
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await axios.get(`${import.meta.env.VITE_API_URL}/users/merged`);
-      console.log("Fetched Users:", res.data); // Debugging
-      setTeam(res.data);
+      setTeam(res.data || []);
+      setError(null);
     } catch (err) {
       console.error("Fetch error:", err);
-      setError(err.message || "Failed to load user data.");
+      setError(err.response?.data?.message || err.message || "Failed to load user data.");
     } finally {
       setLoading(false);
     }
@@ -44,69 +44,77 @@ const TeamPage = () => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Handle role change
   const handleRoleChange = async (clerkId, id, newRole) => {
-    if (!clerkId || !id) {
-      message.warning("Invalid user data");
+    if (!id) {
+      message.warning("Cannot update role for Clerk-only users.");
       return;
     }
 
     setUpdatingRole(id);
-
     try {
-      const response = await axios.put(
+      const res = await axios.put(
         `${import.meta.env.VITE_API_URL}/users/toggle-role/${id}`,
         { role: newRole },
         { headers: { "Content-Type": "application/json" } }
       );
 
-      if (response.status === 200) {
+      if (res.status === 200) {
         message.success("Role updated successfully");
-        await fetchUsers();
+        fetchUsers();
       } else {
-        message.error("Failed to update role");
+        throw new Error("Failed to update role");
       }
     } catch (err) {
       console.error("Update role error:", err);
-      message.error("Failed to update role. Please try again.");
+      message.error(err.response?.data?.message || "Failed to update role.");
     } finally {
       setUpdatingRole(null);
     }
   };
 
-  // Handle user deletion
-  const handleDelete = async (id) => {
-    if (!id) return message.warning("Invalid user data");
+  const handleDelete = async (clerkId) => {
+    if (!clerkId) {
+      message.warning("Invalid Clerk ID");
+      return;
+    }
 
     try {
-      await axios.delete(`${import.meta.env.VITE_API_URL}/users/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/users/${clerkId}`);
       message.success("User deleted successfully");
-      setTeam((prev) => prev.filter((user) => user.id !== id));
+      fetchUsers();
     } catch (err) {
-      console.error("Delete error:", err);
-      message.error("Failed to delete user");
+      console.error("Delete user error:", err);
+      message.error(err.response?.data?.message || "Failed to delete user.");
     }
   };
 
-  // Table columns
   const columns = [
-    { title: "Name", dataIndex: "name", key: "name" },
-    { title: "Email", dataIndex: "email", key: "email" },
-    { title: "Clerk ID", dataIndex: "clerkId", key: "clerkId" },
+    {
+      title: "Name",
+      dataIndex: "name",
+      key: "name",
+      render: (text) => text || <i style={{ color: "gray" }}>No Name</i>,
+    },
+    {
+      title: "Email",
+      dataIndex: "email",
+      key: "email",
+      render: (text) => text || <i style={{ color: "gray" }}>No Email</i>,
+    },
     {
       title: "Role",
       dataIndex: "role",
       key: "role",
-      render: (role, record) => (
+      render: (_, record) => (
         <Select
-          value={role}
+          value={record.role || "user"}
+          disabled={!record.id}
           style={{ width: 120 }}
+          onChange={(value) => handleRoleChange(record.clerkId, record.id, value)}
           loading={updatingRole === record.id}
-          onChange={(newRole) => handleRoleChange(record.clerkId, record.id, newRole)}
-          disabled={!record.clerkId || !record.id}
         >
-          <Option value="admin">Admin</Option>
           <Option value="user">User</Option>
+          <Option value="admin">Admin</Option>
         </Select>
       ),
     },
@@ -114,43 +122,41 @@ const TeamPage = () => {
       title: "Action",
       key: "action",
       render: (_, record) =>
-        record.id ? (
+        record.clerkId ? (
           <Popconfirm
             title="Are you sure you want to delete this user?"
-            onConfirm={() => handleDelete(record.id)}
+            onConfirm={() => handleDelete(record.clerkId)}
             okText="Yes"
             cancelText="No"
           >
-            <Button danger size="small">Delete</Button>
+            <Button danger>Delete</Button>
           </Popconfirm>
         ) : (
-          <span style={{ color: "#999" }}>Not in DB</span>
+          <span style={{ color: "gray" }}>Clerk ID missing</span>
         ),
     },
   ];
 
   return (
-    <Layout style={{ minHeight: "100vh", background: "#f4f6f8", display: "flex" }}>
+    <Layout style={{ minHeight: "100vh" }}>
       <Sidebar />
       <Layout>
         <AdminNavbar />
-        <Content style={{ padding: 24, overflowX: "auto" }}>
+        <Content className="p-4">
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="p-6 bg-white rounded-lg shadow-md"
+            transition={{ duration: 0.5 }}
           >
-            <Title level={3}>Team Management</Title>
-            {error && <Alert message={error} type="error" className="mb-4" />}
-            <Card className="mt-4 shadow-sm">
+            <Title level={2}>Team Management</Title>
+            <Card>
+              {error && <Alert type="error" message={error} showIcon />}
               <Table
-                columns={columns}
                 dataSource={team}
+                columns={columns}
+                rowKey={(record) => record.clerkId || record.email || Math.random()}
                 loading={loading}
-                rowKey={(record) => record.id || record.clerkId}
-                pagination={{ pageSize: 6 }}
-                scroll={{ x: "max-content" }}
+                locale={{ emptyText: <Empty description="No users found." /> }}
               />
             </Card>
           </motion.div>
