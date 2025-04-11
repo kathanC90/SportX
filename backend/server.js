@@ -4,9 +4,8 @@ const cors = require("cors");
 const { requireAuth } = require("@clerk/express");
 dotenv.config();
 const sequelize = require("./src/config/database");
-const Order = require("./src/models/order"); // ✅ Import the Order model
-const paymentRoutes = require("./src/routes/paymentRoutes");
 const app = express();
+
 
 // ✅ Optimized CORS configuration
 const corsOptions = {
@@ -29,8 +28,9 @@ app.use("/api/users", require("./src/routes/userRoutes"));
 app.use("/api/products", require("./src/routes/productRoutes"));
 app.use("/api/admin", require("./src/routes/adminRoutes"));
 app.use("/api/payment", require("./src/routes/paymentRoutes"));
-app.use("/api/orders", require("./src/routes/orderRoutes")); // ✅ Ensure this file exists
+app.use("/api/orders", require("./src/routes/orderRoutes")); // 
 
+app.use("/api/users/edit", require("./src/routes/editprofileroutes"));
 // ✅ Root route
 app.get("/", (req, res) => {
   res.send("🚀 Server is running successfully!");

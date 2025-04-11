@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { useUser } from "@clerk/clerk-react";
 import Navbar from "../components/Navbar";
@@ -10,15 +10,15 @@ const UserOrdersPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // ✅ Function to Fetch Orders for Logged-in User
-  const fetchOrders = async () => {
+  // ✅ Stable fetchOrders with useCallback
+  const fetchOrders = useCallback(async () => {
     if (!user) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      const res = await axios.get(`http://localhost:5000/api/orders?userId=${user.id}`, {
+      const res = await axios.get("http://localhost:5000/api/orders", {
         withCredentials: true,
       });
 
@@ -35,59 +35,65 @@ const UserOrdersPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
-  // ✅ Fetch orders when the page loads
+  // ✅ useEffect with safe dependency
   useEffect(() => {
     if (user) fetchOrders();
-  }, [user]);
+  }, [user, fetchOrders]);
 
   return (
     <>
       <Navbar />
-      <div className="p-6 min-h-screen">
-        <h2 className="text-2xl font-semibold mb-4">My Orders</h2>
+      <div className="min-h-screen p-6">
+        <h2 className="mb-4 text-2xl font-semibold">My Orders</h2>
 
-        {/* ✅ Refresh Button */}
         <button
           onClick={fetchOrders}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-all mb-4"
+          className="px-4 py-2 mb-4 text-white transition-all bg-blue-600 rounded-lg hover:bg-blue-700"
           disabled={loading}
         >
           {loading ? "Refreshing..." : "Refresh Orders"}
         </button>
 
-        {/* ✅ Loading Indicator */}
         {loading && <p className="text-gray-600">Loading your orders...</p>}
-
-        {/* ✅ Error Message */}
         {error && <p className="text-red-500">{error}</p>}
+        {!loading && orders.length === 0 && (
+          <p className="text-gray-500">You haven't placed any orders yet.</p>
+        )}
 
-        {/* ✅ No Orders Found */}
-        {!loading && orders.length === 0 && <p className="text-gray-500">You haven't placed any orders yet.</p>}
-
-        {/* ✅ Orders Table */}
         {!loading && orders.length > 0 && (
-          <table className="w-full border-collapse border border-gray-300 mt-4">
+          <table className="w-full mt-4 border border-collapse border-gray-300">
             <thead>
               <tr className="bg-gray-200">
-                <th className="border p-2">Order ID</th>
-                <th className="border p-2">Total</th>
-                <th className="border p-2">Status</th>
-                <th className="border p-2">Date</th>
+                <th className="p-2 border">Order ID</th>
+                <th className="p-2 border">Total</th>
+                <th className="p-2 border">Status</th>
+                <th className="p-2 border">Date</th>
               </tr>
             </thead>
             <tbody>
               {orders.map((order) => (
                 <tr key={order.id} className="text-center">
-                  <td className="border p-2">{order.id}</td>
-                  <td className="border p-2">
-                    {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(order.totalAmount / 100)}
+                  <td className="p-2 border">{order.id}</td>
+                  <td className="p-2 border">
+                    {new Intl.NumberFormat("en-US", {
+                      style: "currency",
+                      currency: "USD",
+                    }).format(order.totalAmount / 100)}
                   </td>
-                  <td className={`border p-2 font-semibold ${order.status === "completed" ? "text-green-600" : "text-red-600"}`}>
+                  <td
+                    className={`border p-2 font-semibold ${
+                      order.status === "completed"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
                     {order.status}
                   </td>
-                  <td className="border p-2">{new Date(order.createdAt).toLocaleString()}</td>
+                  <td className="p-2 border">
+                    {new Date(order.createdAt).toLocaleString()}
+                  </td>
                 </tr>
               ))}
             </tbody>

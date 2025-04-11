@@ -1,60 +1,73 @@
+// paymentRoutes.js
 require("dotenv").config();
 const express = require("express");
 const router = express.Router();
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
 const { requireAuth } = require("@clerk/express");
 const Order = require("../models/order");
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.error("❌ STRIPE_SECRET_KEY is missing in .env file!");
+// Check environment variables
+if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+  console.error("❌ RAZORPAY_KEY_ID or RAZORPAY_KEY_SECRET is missing in .env file!");
   process.exit(1);
 }
 
-// ✅ Create Payment Intent
-router.post("/create-payment-intent", async (req, res) => {
+// Initialize Razorpay
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
+});
+
+// Create Razorpay Order
+router.post("/create-razorpay-order", async (req, res) => {
   try {
-    const { amount } = req.body;
+    const { amount, currency = "INR", receipt = "receipt_order_123" } = req.body;
 
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
-    console.log(`🟡 Received request for amount: ${amount}`);
+    const options = { amount, currency, receipt };
+    const order = await razorpay.orders.create(options);
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: "usd",
-      payment_method_types: ["card"],
+    res.json({
+      id: order.id,
+      currency: order.currency,
+      amount: order.amount,
     });
-
-    console.log(`✅ Payment Intent Created: ${paymentIntent.id}`);
-
-    res.json({ clientSecret: paymentIntent.client_secret });
   } catch (error) {
-    console.error("Error creating Payment Intent:", error);
+    console.error("❌ Error creating Razorpay order:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// ✅ Update Payment Status
-router.post("/update-payment-status", requireAuth(), async (req, res) => {
+// Verify Razorpay Payment
+router.post("/verify-razorpay-payment", requireAuth(), async (req, res) => {
   try {
-    const { paymentIntentId } = req.body;
-    if (!paymentIntentId) return res.status(400).json({ error: "Missing paymentIntentId" });
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-    if (!paymentIntent) return res.status(404).json({ error: "Payment Intent not found" });
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
 
-    const order = await Order.findOne({ where: { paymentIntentId } });
+    if (generatedSignature !== razorpay_signature) {
+      return res.status(400).json({ error: "Invalid signature. Payment verification failed." });
+    }
+
+    // Update order status
+    const order = await Order.findOne({ where: { razorpayOrderId: razorpay_order_id } });
     if (!order) return res.status(404).json({ error: "Order not found" });
 
-    order.paymentStatus = paymentIntent.status === "succeeded" ? "Paid" : "Failed";
+    order.paymentStatus = "Paid";
+    order.razorpayPaymentId = razorpay_payment_id;
     await order.save();
 
-    res.json({ message: `Order updated to ${order.paymentStatus}` });
+    res.json({ message: "Payment verified and order updated to Paid" });
   } catch (error) {
-    console.error("❌ Payment Status Update Error:", error);
-    res.status(500).json({ error: "Failed to update order status" });
+    console.error("❌ Payment verification failed:", error);
+    res.status(500).json({ error: "Failed to verify payment" });
   }
 });
 
