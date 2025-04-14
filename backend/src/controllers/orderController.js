@@ -1,69 +1,89 @@
+// controllers/orderController.js
 const { Order, User } = require("../models");
 
-// ✅ Create Order After Successful Payment
+// Create Order After Successful Payment
 exports.createOrder = async (req, res) => {
   try {
-    const userId = req.auth?.userId;
-
-    if (!userId) {
-      return res.status(401).json({ message: "Unauthorized: Clerk user ID missing" });
-    }
-
-    const { totalAmount, paymentIntentId, status } = req.body;
-
-    if (!totalAmount || !paymentIntentId) {
-      return res.status(400).json({ message: "Missing required fields: totalAmount or paymentIntentId" });
-    }
-
-    // Check if user exists in the DB (by clerkId)
-    const dbUser = await User.findOne({ where: { clerkId: userId } });
-
+    const { totalAmount, paymentIntentId, shippingAddress, items } = req.body;
+    const clerkUserId = req.auth.userId;
+    
+    // Find user in the database
+    const dbUser = await User.findOne({ where: { clerkId: clerkUserId } });
     if (!dbUser) {
-      return res.status(404).json({ message: "User not found in database" });
+      return res.status(404).json({ error: "User not found in DB" });
     }
-
-    // Create order with correct references and defaults
+    
+    // Create new order
     const order = await Order.create({
-      userId: dbUser.clerkId, // Matches userId reference to clerkId in model
+      userId: dbUser.id,
       totalAmount,
       paymentIntentId,
-      status: status || "pending", // Default to "pending" as per model
+      status: "pending",
+      shippingAddress: JSON.stringify(shippingAddress),
+      items: JSON.stringify(items),
     });
-
-    return res.status(201).json({ message: "Order created successfully", order });
+    
+    console.log("Order created successfully:", order.id);
+    res.status(201).json(order);
   } catch (error) {
-    console.error("Error creating order:", error);
-    return res.status(500).json({ message: "Internal server error" });
+    console.error("Order creation error:", error);
+    res.status(500).json({
+      error: 'Order creation failed',
+      details: error.message,
+    });
   }
 };
 
-// ✅ Get Orders for Logged-in User
-exports.getOrdersByUser = async (req, res) => {
+// Update order status
+exports.updateOrderStatus = async (req, res) => {
   try {
-    const userId = req.auth?.userId;
+    const { id } = req.params;
+    const { status } = req.body;
+    const clerkUserId = req.auth?.userId;
 
-    if (!userId) {
-      return res.status(400).json({ error: "User not authenticated" });
+    if (!clerkUserId) {
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const orders = await Order.findAll({
-      where: { userId },
-      order: [["createdAt", "DESC"]],
-      raw: true,
-    });
+    // Find the user in the database
+    const dbUser = await User.findOne({ where: { clerkId: clerkUserId } });
+    if (!dbUser) {
+      return res.status(404).json({ error: "User not found in DB" });
+    }
 
-    res.status(200).json({ orders });
+    const order = await Order.findByPk(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Check if user is admin or order belongs to user
+    if (dbUser.role !== 'admin' && order.userId !== dbUser.id) {
+      return res.status(403).json({ message: "Unauthorized to update this order" });
+    }
+
+    await order.update({ status });
+    res.status(200).json({ message: "Order status updated", order });
   } catch (error) {
-    console.error("Error fetching user orders:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("Error updating order status:", error);
+    res.status(500).json({ 
+      message: "Internal server error",
+      error: error.message 
+    });
   }
 };
 
-// ✅ Get All Orders (Admin Only)
+// Get all orders (Admin only)
 exports.getAllOrders = async (req, res) => {
   try {
-    const role = req.auth?.sessionClaims?.role || req.auth?.claims?.role;
-    if (role !== "admin") {
+    const clerkUserId = req.auth?.userId;
+    
+    // Find the user in the database
+    const dbUser = await User.findOne({ where: { clerkId: clerkUserId } });
+    if (!dbUser) {
+      return res.status(404).json({ error: "User not found in DB" });
+    }
+
+    if (dbUser.role !== "admin") {
       return res.status(403).json({ error: "Access denied" });
     }
 
@@ -71,14 +91,88 @@ exports.getAllOrders = async (req, res) => {
       include: [{
         model: User,
         as: "user",
-        attributes: ["id", "firstName", "lastName"],
+        attributes: ["id", "name", "email"],
       }],
       order: [["createdAt", "DESC"]],
     });
 
-    res.status(200).json({ orders });
+    // Parse JSON strings to objects for response
+    const formattedOrders = orders.map(order => {
+      const plainOrder = order.get({ plain: true });
+      if (plainOrder.shippingAddress) {
+        try {
+          plainOrder.shippingAddress = JSON.parse(plainOrder.shippingAddress);
+        } catch (e) {
+          plainOrder.shippingAddress = {};
+        }
+      }
+      if (plainOrder.items) {
+        try {
+          plainOrder.items = JSON.parse(plainOrder.items);
+        } catch (e) {
+          plainOrder.items = [];
+        }
+      }
+      return plainOrder;
+    });
+
+    res.status(200).json(formattedOrders);
   } catch (error) {
     console.error("Error fetching all orders:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ 
+      error: "Internal Server Error",
+      details: error.message 
+    });
   }
 };
+
+// Get order by ID
+exports.getOrderById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const clerkUserId = req.auth?.userId;
+    
+    // Find the user in the database
+    const dbUser = await User.findOne({ where: { clerkId: clerkUserId } });
+    if (!dbUser) {
+      return res.status(404).json({ error: "User not found in DB" });
+    }
+
+    const order = await Order.findByPk(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // Check if user is admin or order belongs to user
+    if (dbUser.role !== 'admin' && order.userId !== dbUser.id) {
+      return res.status(403).json({ message: "Unauthorized to view this order" });
+    }
+
+    // Parse JSON strings to objects for response
+    const plainOrder = order.get({ plain: true });
+    if (plainOrder.shippingAddress) {
+      try {
+        plainOrder.shippingAddress = JSON.parse(plainOrder.shippingAddress);
+      } catch (e) {
+        plainOrder.shippingAddress = {};
+      }
+    }
+    if (plainOrder.items) {
+      try {
+        plainOrder.items = JSON.parse(plainOrder.items);
+      } catch (e) {
+        plainOrder.items = [];
+      }
+    }
+
+    res.status(200).json(plainOrder);
+  } catch (error) {
+    console.error("Error fetching order:", error);
+    res.status(500).json({ 
+      message: "Internal server error",
+      error: error.message 
+    });
+  }
+};
+
+module.exports = exports;

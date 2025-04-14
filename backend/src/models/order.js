@@ -1,3 +1,4 @@
+// models/order.js
 module.exports = (sequelize, DataTypes) => {
   const Order = sequelize.define(
     "Order",
@@ -8,13 +9,8 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
       },
       userId: {
-        type: DataTypes.STRING, // Matches Clerk's `userId`
+        type: DataTypes.UUID, // Changed to UUID to match User.id
         allowNull: false,
-        references: {
-          model: "Users",
-          key: "clerkId", // ✅ References Clerk ID
-        },
-        onDelete: "CASCADE",
       },
       totalAmount: {
         type: DataTypes.FLOAT,
@@ -28,6 +24,22 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      paymentId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      paymentDate: {
+        type: DataTypes.DATE,
+        allowNull: true,
+      },
+      shippingAddress: {
+        type: DataTypes.TEXT, // Will store JSON stringified address
+        allowNull: true,
+      },
+      items: {
+        type: DataTypes.TEXT, // Will store JSON stringified cart items
+        allowNull: true,
+      },
     },
     {
       timestamps: true,
@@ -36,7 +48,7 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   Order.associate = (models) => {
-    Order.belongsTo(models.User, { foreignKey: "userId", targetKey: "clerkId", as: "user" });
+    Order.belongsTo(models.User, { foreignKey: "userId", as: "user" });
   };
 
   return Order;
