@@ -8,18 +8,38 @@ export default function ContactPage() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors, isSubmitting },
   } = useForm();
 
   const onSubmit = async (data) => {
-    console.log("Form Submitted", data);
-    alert("Message sent successfully!");
+    try {
+      const response = await fetch("http://localhost:5000/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        alert("Message sent successfully!");
+        reset(); // Clear the form
+      } else {
+        alert(result.error || "Failed to send message.");
+      }
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      alert("Something went wrong. Please try again later.");
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Navbar />
-      <div className="flex flex-col items-center flex-1 p-8">
+      <div className="flex flex-col items-center flex-1 p-16">
         <motion.h1
           className="mb-6 text-4xl font-bold text-center text-gray-800"
           initial={{ opacity: 0, y: -50 }}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Layout, Card, Button, Rate, Typography, Modal, Tag, message } from "antd";
+import { Layout, Card, Button, Rate, Typography, message } from "antd";
 import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -16,12 +16,13 @@ const availabilityTag = (status) => {
     "Limited": "orange",
     "Out of Stock": "red",
   };
-  return <Tag color={colors[status]}>{status}</Tag>;
+  return <div style={{ color: colors[status], border: `1px solid ${colors[status]}`, padding: '2px 8px', borderRadius: '4px', display: 'inline-block' }}>{status}</div>;
 };
 
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -30,11 +31,14 @@ const ProductsPage = () => {
 
   const fetchProducts = async () => {
     try {
+      setLoading(true);
+      // Make sure this endpoint matches the one in your routes file
       const response = await axios.get("http://localhost:5000/api/products/fetch");
-      console.log("Fetched Products:", response.data); // ✅ Debugging API response
+      console.log("Fetched Products:", response.data);
       setProducts(response.data);
     } catch (error) {
       console.error("Error fetching products:", error);
+      message.error("Failed to load products.");
     } finally {
       setLoading(false);
     }
@@ -45,34 +49,43 @@ const ProductsPage = () => {
       console.error("Invalid product ID:", productId);
       return;
     }
-    console.log("Editing product with ID:", productId); // ✅ Debugging ID
+    console.log("Editing product with ID:", productId);
     navigate(`/admin/edit-product/${productId}`);
   };
 
   const handleDelete = async (id) => {
     console.log(`🛑 Deleting product: ${id}`);
-  
+    if (deleting) return;  // Prevent multiple delete clicks
+
+    setDeleting(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${id}`, {
-        method: "DELETE",
+      // Update: Adding credentials and correct headers
+      const response = await axios.delete(`http://localhost:5000/api/products/${id}`, {
+        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
-        },
+          "Authorization": `Bearer ${window.Clerk?.session?.getToken() || localStorage.getItem('clerkToken')}`
+        }
       });
-  
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to delete product");
+
+      console.log("Delete response:", response);
+      
+      if (response.status === 200) {
+        console.log("✅ Product deleted successfully");
+        message.success("Product deleted successfully!");
+        // Refresh product list after deletion
+        setProducts(products.filter((product) => product.id !== id));
+      } else {
+        throw new Error("Failed to delete product");
       }
-  
-      console.log("✅ Product deleted successfully");
-      // Refresh product list after deletion
-      fetchProducts();
     } catch (error) {
       console.error("❌ Error deleting product:", error.message);
+      message.error(error.response?.data?.error || "Failed to delete product.");
+    } finally {
+      setDeleting(false);
     }
   };
-  
+
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f8", display: "flex" }}>
       <Sidebar />
@@ -119,10 +132,10 @@ const ProductsPage = () => {
                       <Title level={4}>{product.name}</Title>
                       <Text className="text-lg font-semibold text-gray-600">${product.price}</Text>
                       <div className="flex items-center mt-2">
-                        <Rate disabled defaultValue={product.rating} className="text-yellow-500" />
-                        <Text className="ml-2 text-gray-500">({product.reviews} reviews)</Text>
+                        <Rate disabled defaultValue={product.rating || 0} className="text-yellow-500" />
+                        <Text className="ml-2 text-gray-500">({product.reviews || 0} reviews)</Text>
                       </div>
-                      <div className="mt-2">{availabilityTag(product.availability)}</div>
+                      <div className="mt-2">{availabilityTag(product.availability || "Available")}</div>
                       <div className="flex justify-between mt-4">
                         <motion.button
                           className="flex items-center gap-1 px-3 py-2 transition-all bg-gray-200 rounded-md hover:bg-gray-300"

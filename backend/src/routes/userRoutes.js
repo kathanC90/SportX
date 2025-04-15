@@ -15,6 +15,66 @@ const pool = new Pool({
   port: 5432,
 });
 
+router.get("/:userId/profile", async (req, res) => {
+  const { userId } = req.params;
+
+  try {
+    const user = await User.findOne({ where: { clerkId: userId } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const [firstName = "", lastName = ""] = (user.name || "").split(" ");
+
+    res.json({
+      firstName,
+      lastName,
+      profileImage: user.profileImage,
+    });
+  } catch (error) {
+    console.error("Fetch profile error:", error);
+    res.status(500).json({ message: "Failed to fetch profile" });
+  }
+});
+
+// ✅ Update user profile (DB + Clerk + Cloudinary image)
+router.put("/:userId/profile", async (req, res) => {
+  const { userId } = req.params;
+  const { firstName, lastName, profileImage } = req.body;
+
+  try {
+    const user = await User.findOne({ where: { clerkId: userId } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const fullName = `${firstName} ${lastName}`.trim();
+    await user.update({ name: fullName, profileImage });
+
+    // Update Clerk name
+    await clerkClient.users.updateUser(userId, {
+      firstName,
+      lastName,
+    });
+
+    // ✅ Upload Cloudinary image to Clerk profile if provided
+    if (profileImage && profileImage.startsWith("http")) {
+      try {
+        const response = await axios.get(profileImage, {
+          responseType: "arraybuffer",
+        });
+
+        const imageBuffer = Buffer.from(response.data, "binary");
+
+        await clerkClient.users.updateUserProfileImage(userId, imageBuffer);
+      } catch (imageError) {
+        console.warn("⚠️ Failed to upload image to Clerk:", imageError.message);
+        // We don't block the update, just warn
+      }
+    }
+
+    res.status(200).json({ message: "✅ Profile updated in DB and Clerk" });
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ message: "❌ Failed to update profile" });
+  }
+});
 // Upload image route
 router.post("/upload-image", uploadMiddleware.single("image"), uploadImage);
 

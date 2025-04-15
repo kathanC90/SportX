@@ -1,57 +1,53 @@
 const { clerkClient } = require("@clerk/clerk-sdk-node");
-const db = require("../models");
-const { User } = db;
+const { User } = require("../models");
 
 const mergeUsers = async (req, res) => {
   try {
-    const dbUsers = await User.findAll({
-      attributes: ["id", "name", "email", "role", "createdAt"],
-      raw: true,
-    });
+    const dbUsers = await User.findAll();
+    const clerkUsersResponse = await clerkClient.users.getUserList();
+    const clerkUsers = clerkUsersResponse?.data || [];
 
-    const clerkUserList = await clerkClient.users.getUserList();
-    const clerkUsers = Array.isArray(clerkUserList) ? clerkUserList : clerkUserList.data || [];
+    const dbClerkIds = dbUsers.map((u) => u.clerkId);
+    const newSyncedUsers = [];
 
-    const mergedUsers = [];
+    for (const clerkUser of clerkUsers) {
+      const { id: clerkId, emailAddresses, firstName, lastName, imageUrl } = clerkUser;
+      const email = emailAddresses?.[0]?.emailAddress || null;
+      const name = `${firstName || ""} ${lastName || ""}`.trim();
+      const profileImage = imageUrl;
 
-    dbUsers.forEach((dbUser) => {
-      const clerkUser = clerkUsers.find(
-        (cu) => cu.emailAddresses[0]?.emailAddress === dbUser.email
-      );
-
-      mergedUsers.push({
-        email: dbUser.email,
-        name: dbUser.name,
-        role: dbUser.role,
-        createdAt: dbUser.createdAt,
-        dbId: dbUser.id,
-        clerkId: clerkUser?.id || null,
-        clerkStatus: clerkUser ? "✔️ In Clerk" : "❌ Not in Clerk",
-      });
-    });
-
-    clerkUsers.forEach((clerkUser) => {
-      const existsInDb = dbUsers.some(
-        (dbUser) => dbUser.email === clerkUser.emailAddresses[0]?.emailAddress
-      );
-
-      if (!existsInDb) {
-        mergedUsers.push({
-          email: clerkUser.emailAddresses[0]?.emailAddress,
-          name: `${clerkUser.firstName || ""} ${clerkUser.lastName || ""}`.trim(),
-          role: clerkUser.publicMetadata?.role || "user",
-          createdAt: clerkUser.createdAt,
-          dbId: null,
-          clerkId: clerkUser.id,
-          clerkStatus: "✔️ In Clerk Only",
+      if (!dbClerkIds.includes(clerkId)) {
+        const newUser = await User.create({
+          name: name || "No Name",
+          email,
+          role: "user",
+          clerkId,
+          profileImage: profileImage || undefined,
         });
+        newSyncedUsers.push(newUser);
       }
+    }
+
+    const updatedDbUsers = await User.findAll();
+
+    const mergedUsers = updatedDbUsers.map((dbUser) => {
+      const clerkUser = clerkUsers.find((cu) => cu.id === dbUser.clerkId);
+      return {
+        id: dbUser.id,
+        name: `${clerkUser?.firstName || ""} ${clerkUser?.lastName || ""}`.trim() || dbUser.name,
+        email: clerkUser?.emailAddresses?.[0]?.emailAddress || dbUser.email,
+        role: dbUser.role,
+        clerkId: dbUser.clerkId,
+        profileImage: clerkUser?.imageUrl || dbUser.profileImage,
+        createdAt: dbUser.createdAt,
+        updatedAt: dbUser.updatedAt,
+      };
     });
 
-    return res.status(200).json(mergedUsers);
+    res.status(200).json(mergedUsers);
   } catch (error) {
-    console.error("❌ Error merging users:", error);
-    res.status(500).json({ error: "Failed to fetch users." });
+    console.error("Error merging Clerk and DB users:", error);
+    res.status(500).json({ message: "Failed to merge users." });
   }
 };
 

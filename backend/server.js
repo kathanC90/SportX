@@ -5,8 +5,7 @@ const { requireAuth } = require("@clerk/express");
 dotenv.config();
 const sequelize = require("./src/config/database");
 const app = express();
-
-
+const mergeClerkUsersToDB = require("./src/utils/mergeUsers"); // ✅ import here
 // ✅ Optimized CORS configuration
 const corsOptions = {
   origin: "http://localhost:5173", // ✅ Allow frontend origin
@@ -29,14 +28,14 @@ app.use("/api/products", require("./src/routes/productRoutes"));
 app.use("/api/admin", require("./src/routes/adminRoutes"));
 app.use("/api/payment", require("./src/routes/paymentRoutes"));
 app.use("/api/orders", require("./src/routes/orderRoutes")); // 
-
+app.use("/api/contact", require("./src/routes/contact"));
 app.use("/api/users/edit", require("./src/routes/editprofileroutes"));
 // ✅ Root route
 app.get("/", (req, res) => {
   res.send("🚀 Server is running successfully!");
 });
 
-
+mergeClerkUsersToDB();
 
 
 // ✅ Sync Database and start server

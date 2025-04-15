@@ -23,8 +23,8 @@ const Filters = ({ selectedFilters, onFilterChange }) => {
         </motion.span>
         <motion.input
           type="range"
-          min="10"
-          max="500"
+          min="300"
+          max="1000"
           step="10"
           value={selectedFilters.price}
           onChange={(e) => onFilterChange("price", e.target.value)}
@@ -36,7 +36,7 @@ const Filters = ({ selectedFilters, onFilterChange }) => {
 
       {/* Dropdowns */}
       {[
-        { label: "Color", key: "color", options: ["Red", "Blue", "White", "Brown", "Black", "Green"] },
+        { label: "Color", key: "color", options: ["Red", "Blue", "White", "Brown", "Wooden Black", "Green"] },
         { label: "Gender", key: "gender", options: ["Men", "Women", "Unisex"] },
         { label: "Size", key: "size", options: ["XS", "S", "M", "L", "XL"] },
         { label: "Brand", key: "brand", options: ["Nike", "Adidas", "Puma", "Reebok"] },

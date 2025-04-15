@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layout, Form, Input, Button, Upload, Typography, message } from "antd";
+import { Layout, Form, Input, Button, Upload, Typography, message, Select } from "antd";
 import { UploadOutlined, SaveOutlined, ArrowLeftOutlined } from "@ant-design/icons";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
@@ -9,13 +9,49 @@ import axios from "axios";
 
 const { Content } = Layout;
 const { Title } = Typography;
+const { Option } = Select;
 
 const AddProduct = () => {
   const [loading, setLoading] = useState(false);
   const [fileList, setFileList] = useState([]);
   const navigate = useNavigate();
 
-  // ✅ Form Submit Handler
+  const categories = [
+    "Fitness Equipment",
+    "Outdoor Sports",
+    "Indoor Games",
+    "Team Sports",
+    "Athletic Apparel",
+    "Training Accessories",
+    "Water Sports",
+    "Other"
+  ];
+
+  const brands = [
+    "Nike",
+    "Adidas",
+    "Puma",
+    "Under Armour",
+    "Decathlon",
+    "Yonex",
+    "Wilson",
+    "Other"
+  ];
+
+  const materials = [
+    "Carbon Fiber",
+    "Rubber",
+    "Leather",
+    "Nylon",
+    "Synthetic",
+    "Polyester",
+    "Foam",
+    "Other"
+  ];
+
+  const sizes = ["S", "M", "L", "XL", "XXL"];
+  const colors = ["Red", "Blue", "Green", "Black", "White"];
+
   const onFinish = async (values) => {
     setLoading(true);
     try {
@@ -25,19 +61,15 @@ const AddProduct = () => {
         return;
       }
 
-      // ✅ Ensure productId is assigned
       if (!values.productId) {
-        values.productId = `PROD-${Date.now()}`; // Generate a temporary ID (or fetch from DB)
+        values.productId = `PROD-${Date.now()}`;
       }
 
       const formData = new FormData();
-
-      // ✅ Append all text fields
       Object.keys(values).forEach((key) => {
         formData.append(key, values[key]);
       });
 
-      // ✅ Append image correctly
       if (fileList[0]?.originFileObj) {
         formData.append("image", fileList[0].originFileObj);
       } else {
@@ -46,19 +78,10 @@ const AddProduct = () => {
         return;
       }
 
-      console.log("🟡 FormData Key: productId, Value:", values.productId);
-
-      // ✅ Debugging: Log FormData
-      for (let pair of formData.entries()) {
-        console.log(`🟡 FormData Key: ${pair[0]}, Value:`, pair[1]);
-      }
-
       await axios.post("http://localhost:5000/api/products/createproduct", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
-      
+
       message.success("Product added successfully!");
       navigate("/admin/products");
     } catch (error) {
@@ -88,11 +111,8 @@ const AddProduct = () => {
               </Button>
             </div>
 
-            <Form layout="vertical" onFinish={onFinish} initialValues={{ productId: "", price: "", name: "" }}>
-              {/* ✅ Hidden Input for productId */}
-              <Form.Item name="productId" hidden>
-                <Input />
-              </Form.Item>
+            <Form layout="vertical" onFinish={onFinish} initialValues={{ productId: "" }}>
+              <Form.Item name="productId" hidden><Input /></Form.Item>
 
               <Form.Item label="Product Name" name="name" rules={[{ required: true, message: "Please enter product name!" }]}>
                 <Input placeholder="Enter product name" />
@@ -102,46 +122,52 @@ const AddProduct = () => {
                 <Input.TextArea placeholder="Enter product description" />
               </Form.Item>
 
-              <Form.Item label="Category" name="category" rules={[{ required: true, message: "Please enter category!" }]}>
-                <Input placeholder="Enter category" />
-              </Form.Item>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Form.Item label="Product Category" name="category" rules={[{ required: true, message: "Please select a category!" }]}>
+                  <Select placeholder="Select product category">
+                    {categories.map(cat => <Option key={cat} value={cat}>{cat}</Option>)}
+                  </Select>
+                </Form.Item>
 
-              <Form.Item label="Brand" name="brand" rules={[{ required: true, message: "Please enter brand!" }]}>
-                <Input placeholder="Enter brand" />
-              </Form.Item>
+                <Form.Item label="Brand Name" name="brand" rules={[{ required: true, message: "Please select a brand!" }]}>
+                  <Select placeholder="Select brand">
+                    {brands.map(brand => <Option key={brand} value={brand}>{brand}</Option>)}
+                  </Select>
+                </Form.Item>
 
-              <Form.Item label="Color" name="color" rules={[{ required: true, message: "Please enter color!" }]}>
-                <Input placeholder="Enter color" />
-              </Form.Item>
+                <Form.Item label="Color" name="color" rules={[{ required: true, message: "Please select a color!" }]}>
+                  <Select placeholder="Select color">
+                    {colors.map(color => <Option key={color} value={color}>{color}</Option>)}
+                    <Option value="Other">Other</Option>
+                  </Select>
+                </Form.Item>
 
-              <Form.Item label="Size" name="size" rules={[{ required: true, message: "Please enter size!" }]}>
-                <Input placeholder="Enter size" />
-              </Form.Item>
+                <Form.Item label="Size" name="size" rules={[{ required: true, message: "Please select a size!" }]}>
+                  <Select placeholder="Select size">
+                    {sizes.map(size => <Option key={size} value={size}>{size}</Option>)}
+                    <Option value="Other">Other</Option>
+                  </Select>
+                </Form.Item>
 
-              <Form.Item label="Material" name="material" rules={[{ required: true, message: "Please enter material!" }]}>
-                <Input placeholder="Enter material" />
-              </Form.Item>
+                <Form.Item label="Material Type" name="material" rules={[{ required: true, message: "Please select a material!" }]}>
+                  <Select placeholder="Select material">
+                    {materials.map(material => <Option key={material} value={material}>{material}</Option>)}
+                  </Select>
+                </Form.Item>
 
-              <Form.Item label="Price ($)" name="price" rules={[{ required: true, message: "Please enter price!" }]}>
-                <Input type="number" placeholder="Enter price" min="0" step="0.01" />
-              </Form.Item>
+                <Form.Item label="Price ($)" name="price" rules={[{ required: true, message: "Please enter price!" }]}>
+                  <Input type="number" placeholder="Enter price" min="0" step="0.01" />
+                </Form.Item>
+              </div>
 
-              <Form.Item label="Rating" name="rating" rules={[{ required: true, message: "Please enter rating!" }]}>
-                <Input type="number" placeholder="Enter rating" min="0" max="5" step="0.1" />
-              </Form.Item>
-
-              {/* ✅ File Upload Component */}
               <Form.Item label="Upload Product Image" required>
                 <Upload
                   fileList={fileList}
-                  beforeUpload={() => false} // Prevents auto upload
+                  beforeUpload={() => false}
                   listType="picture"
                   maxCount={1}
                   accept="image/png, image/jpeg"
-                  onChange={({ fileList }) => {
-                    console.log("🟡 File Selected:", fileList);
-                    setFileList(fileList);
-                  }}
+                  onChange={({ fileList }) => setFileList(fileList)}
                 >
                   <Button icon={<UploadOutlined />}>Click to Upload</Button>
                 </Upload>

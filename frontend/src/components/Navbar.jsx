@@ -14,12 +14,13 @@ const Navbar = () => {
   const { signOut } = useAuth();
   const { user } = useUser();
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState("");
+  const location = useLocation(); // Access location
+  const [searchQuery, setSearchQuery] = useState(""); // Search state
 
   useEffect(() => {
     setMenuOpen(false);
     setUserDropdown(false);
-  }, [location.pathname]);
+  }, [location.pathname]); // Close menu and dropdown when the page changes
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 50);
@@ -58,7 +59,7 @@ const Navbar = () => {
             type="text"
             placeholder="Search..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)} // Update search query state
             className="px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             whileFocus={{ width: 200 }}
           />

@@ -2,12 +2,11 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../middlewares/uploadMiddleware");
 const productController = require("../controllers/productController");
-const adminAuth = require("../middlewares/Auth");
 
 // ✅ Product CRUD routes (Admin protected)
 router.post("/createproduct", upload.single("image"), productController.createProduct);
-router.put("/:id", adminAuth, productController.updateProduct);
-router.delete("/:id", adminAuth, productController.deleteProduct);
+router.put("/:id", upload.single("image"), productController.updateProduct);
+router.delete("/:id", productController.deleteProduct);
 
 // ✅ Public product routes
 router.get("/fetch", productController.getProducts);

@@ -5,6 +5,7 @@ const { User, Order } = require("../models");
 const router = express.Router();
 
 // ✅ User: Get orders for the current user
+
 router.get("/", requireAuth(), async (req, res) => {
   try {
     const clerkUserId = req.auth.userId;
@@ -51,7 +52,7 @@ router.get("/:id", requireAuth(), async (req, res) => {
 
 // ✅ Admin: Get all orders
 // Admin: Get all orders
-router.get("/admin/all", requireAuth(), async (req, res) => {
+router.get("/admin/all", async (req, res) => {
   try {
     const orders = await Order.findAll({
       include: [{ model: User, as: "user", attributes: ["name", "email"] }],
@@ -63,18 +64,18 @@ router.get("/admin/all", requireAuth(), async (req, res) => {
     }
 
     const formatted = orders.map(order => {
-      const orderJson = order.toJSON(); // Convert to plain object
+      const orderJson = order.toJSON();
       return {
         ...orderJson,
-        customerName: orderJson.user?.name || "N/A", // Access user data
-        customerEmail: orderJson.user?.email || "N/A", // Access user data
-        shippingAddress: orderJson.shippingAddress ? JSON.parse(orderJson.shippingAddress) : null, // Parse shipping address
+        customerName: orderJson.user?.name || "N/A",
+        customerEmail: orderJson.user?.email || "N/A",
+        shippingAddress: orderJson.shippingAddress ? JSON.parse(orderJson.shippingAddress) : null,
+        items: orderJson.items ? JSON.parse(orderJson.items) : [],
       };
     });
-
     res.status(200).json(formatted);
   } catch (error) {
-    console.error("Admin orders fetch error:", error);
+    console.error("❌ Admin orders fetch error:", error);
     res.status(500).json({ error: "Internal server error", details: error.message });
   }
 });
