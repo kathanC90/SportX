@@ -29,7 +29,7 @@ const TeamPage = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_URL}/users/merged`);
+      const res = await axios.get(`${import.meta.env.VITE_API_URL}/users/users-merged`);
       setTeam(res.data || []);
       setError(null);
     } catch (err) {

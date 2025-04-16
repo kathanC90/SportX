@@ -50,6 +50,7 @@ const EditProduct = () => {
     "Synthetic",
     "Polyester",
     "Foam",
+    "Wooden",
     "Other"
   ];
 

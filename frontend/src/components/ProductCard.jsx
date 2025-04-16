@@ -1,53 +1,70 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { message, Tooltip } from "antd";
+import { ShoppingCartOutlined, EyeOutlined } from "@ant-design/icons";
+import "antd/dist/reset.css"; // New AntD 5+
 
 const ProductCard = ({ product }) => {
   const navigate = useNavigate();
 
   const handleViewProduct = (e) => {
-    e.stopPropagation(); // Prevents card click from triggering navigation
+    e.stopPropagation();
     navigate(`/product/${product.id}`);
+  };
+
+  const handleAddToCart = (e) => {
+    e.stopPropagation();
+    message.success(`${product} added to cart! ✅`);
+    // Add your cart logic here (e.g., dispatch to Redux or context)
   };
 
   return (
     <motion.div
       key={product.id}
-      className="p-4 transition bg-white rounded-lg shadow-md cursor-pointer hover:shadow-lg"
-      whileHover={{ scale: 1.05 }}
-      onClick={() => navigate(`/product/${product.id}`)} // Redirect on click
+      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+      whileHover={{ scale: 1.02 }}
+      onClick={handleViewProduct}
     >
       {/* Product Image */}
-      <img
-        src={product.image || "/placeholder.jpg"} // ✅ Fallback image
-        alt={product.name}
-        className="object-cover w-full h-40 rounded-md"
-      />
+      <div className="w-full h-36 overflow-hidden rounded-t-xl">
+        <img
+          src={product.image || "/placeholder.jpg"}
+          alt={product.name}
+          className="object-cover w-full h-full"
+        />
+      </div>
 
-      {/* Product Name & Price */}
-      <h3 className="mt-2 text-lg font-bold truncate">{product.name}</h3>
-      <p className="text-gray-600 font-semibold">${product.price.toFixed(2)}</p>
+      {/* Info Section */}
+      <div className="p-3 flex flex-col gap-1 flex-grow">
+        <h3 className="text-sm font-bold truncate">{product.name}</h3>
+        <p className="text-sm font-semibold text-gray-700">${product.price.toFixed(2)}</p>
+        {product.brand && (
+          <p className="text-xs text-gray-400 truncate">{product.brand}</p>
+        )}
+        {product.rating && (
+          <p className="text-xs text-yellow-500 mt-1">⭐ {product.rating.toFixed(1)} / 5</p>
+        )}
+      </div>
 
-      {/* Brand & Rating */}
-      <p className="text-sm text-gray-500">{product.brand}</p>
-      {product.rating && (
-        <p className="text-sm text-yellow-500">⭐ {product.rating.toFixed(1)} / 5</p>
-      )}
-
-      {/* Buttons */}
-      <div className="flex gap-2 mt-3">
-        <button
-          className="w-full py-2 text-white bg-black rounded-md hover:bg-gray-800"
-          onClick={(e) => e.stopPropagation()} // ✅ Prevents navigation
-        >
-          Add to Cart
-        </button>
-        <button
-          className="w-full py-2 text-white bg-gray-700 rounded-md hover:bg-gray-600"
-          onClick={handleViewProduct} // ✅ Directly navigates
-        >
-          View
-        </button>
+      {/* Action Buttons */}
+      <div className="flex gap-2 p-3 pt-0">
+        <Tooltip title="Add to Cart">
+          <button
+            className="w-1/2 py-2 bg-black text-white rounded-md hover:bg-gray-800"
+            onClick={handleAddToCart}
+          >
+            <ShoppingCartOutlined />
+          </button>
+        </Tooltip>
+        <Tooltip title="View Product">
+          <button
+            className="w-1/2 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600"
+            onClick={handleViewProduct}
+          >
+            <EyeOutlined />
+          </button>
+        </Tooltip>
       </div>
     </motion.div>
   );

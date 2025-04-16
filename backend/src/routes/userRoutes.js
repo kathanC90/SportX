@@ -82,7 +82,7 @@ router.post("/upload-image", uploadMiddleware.single("image"), uploadImage);
 router.get("/", (req, res) => res.send("✅ Users API Working!"));
 
 // Get merged users
-router.get("/merged", async (req, res) => {
+router.get("/users-merged", async (req, res) => {
   try {
     const dbUsers = await User.findAll();
     const clerkUsersResponse = await clerkClient.users.getUserList();

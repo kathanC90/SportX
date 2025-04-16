@@ -1,20 +1,76 @@
 import React from "react";
 import { motion } from "framer-motion";
+import { Select } from "antd";
 
-const Filters = ({ selectedFilters, onFilterChange }) => {
+const { Option } = Select;
+
+const Filters = ({ selectedFilters, onFilterChange, onClearFilters }) => {
+  const filterOptions = [
+    {
+      label: "Color",
+      key: "color",
+      options: ["Red", "Blue", "Green", "Black", "White"],
+    },
+    {
+      label: "Size",
+      key: "size",
+      options: ["S", "M", "L", "XL", "XXL"],
+    },
+    {
+      label: "Brand",
+      key: "brand",
+      options: [
+        "Nike",
+        "Adidas",
+        "Puma",
+        "Under Armour",
+        "Decathlon",
+        "Yonex",
+        "Wilson",
+      ],
+    },
+    {
+      label: "Material",
+      key: "material",
+      options: [
+        "Carbon Fiber",
+        "Rubber",
+        "Leather",
+        "Nylon",
+        "Synthetic",
+        "Polyester",
+        "Foam",
+        "Wooden",
+      ],
+    },
+    {
+      label: "Category",
+      key: "category",
+      options: [
+        "Fitness Equipment",
+        "Outdoor Sports",
+        "Indoor Games",
+        "Team Sports",
+        "Athletic Apparel",
+        "Training Accessories",
+        "Water Sports",
+      ],
+    },
+  ];
+
   return (
-    <aside className="w-1/4 p-4 bg-white rounded-lg shadow-lg">
+    <aside className="w-full p-4 bg-white rounded-lg shadow-lg md:w-1/4">
       <h2 className="mb-4 text-xl font-bold">Filters</h2>
 
       {/* Price Range */}
       <motion.label
-        className="block mb-3"
+        className="block mb-4"
         initial={{ opacity: 0.7 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        Price Range: 
-        <motion.span 
+        Price Range:
+        <motion.span
           className="ml-2 font-semibold text-blue-600"
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 0.3 }}
@@ -23,7 +79,7 @@ const Filters = ({ selectedFilters, onFilterChange }) => {
         </motion.span>
         <motion.input
           type="range"
-          min="300"
+          min="0"
           max="1000"
           step="10"
           value={selectedFilters.price}
@@ -34,38 +90,40 @@ const Filters = ({ selectedFilters, onFilterChange }) => {
         />
       </motion.label>
 
-      {/* Dropdowns */}
-      {[
-        { label: "Color", key: "color", options: ["Red", "Blue", "White", "Brown", "Wooden Black", "Green"] },
-        { label: "Gender", key: "gender", options: ["Men", "Women", "Unisex"] },
-        { label: "Size", key: "size", options: ["XS", "S", "M", "L", "XL"] },
-        { label: "Brand", key: "brand", options: ["Nike", "Adidas", "Puma", "Reebok"] },
-        { label: "Material", key: "material", options: ["Cotton", "Leather", "Polyester", "Denim"] },
-        { label: "Category", key: "category", options: ["Shoes", "Clothing", "Accessories", "Bags"] },
-      ].map(({ label, key, options }) => (
-        <motion.label
+      {/* Dropdown Filters */}
+      {filterOptions.map(({ label, key, options }) => (
+        <motion.div
           key={key}
-          className="block mb-3"
+          className="mb-4"
           whileHover={{ scale: 1.02 }}
           transition={{ duration: 0.3 }}
         >
-          {label}
-          <motion.select
-            className="w-full p-2 mt-1 border rounded cursor-pointer focus:ring-2 focus:ring-blue-500"
-            value={selectedFilters[key]}
-            onChange={(e) => onFilterChange(key, e.target.value)}
-            whileFocus={{ borderColor: "#2563eb", scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
+          <label className="block mb-1 font-medium text-gray-700">{label}</label>
+          <Select
+            placeholder={`Select ${label}`}
+            value={selectedFilters[key] || undefined}
+            onChange={(value) => onFilterChange(key, value)}
+            allowClear
+            className="w-full"
           >
-            <option value="">All</option>
             {options.map((option) => (
-              <option key={option} value={option}>
+              <Option key={option} value={option}>
                 {option}
-              </option>
+              </Option>
             ))}
-          </motion.select>
-        </motion.label>
+          </Select>
+        </motion.div>
       ))}
+
+      {/* Clear All Button */}
+      <motion.button
+        onClick={onClearFilters}
+        className="w-full px-4 py-2 mt-4 text-white bg-red-500 rounded hover:bg-red-600"
+        whileHover={{ scale: 1.03 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        Clear All Filters
+      </motion.button>
     </aside>
   );
 };

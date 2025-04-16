@@ -45,8 +45,8 @@ const CartPage = () => {
                 <div className="ml-4 flex-1">
                   <h2 className="text-lg font-semibold">{item.name}</h2>
                   <p className="text-gray-600 text-sm">{item.description || "No description available."}</p>
-                  <p className="mt-2 text-lg font-medium">Price: ${item.price.toFixed(2)}</p>
-                  <p className="text-gray-500 text-sm">Subtotal: ${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="mt-2 text-lg font-medium">Price: ₹{item.price.toFixed(2)}</p>
+                  <p className="text-gray-500 text-sm">Subtotal: ₹{(item.price * item.quantity).toFixed(2)}</p>
                   
                   {/* Quantity Controls */}
                   <div className="flex items-center gap-2 mt-3">
@@ -78,7 +78,7 @@ const CartPage = () => {
 
             {/* Total Price and Actions */}
             <div className="flex items-center justify-between p-4 bg-white rounded-lg shadow-md">
-              <h2 className="text-xl font-bold">Total: ${totalPrice.toFixed(2)}</h2>
+              <h2 className="text-xl font-bold">Total: ₹{totalPrice.toFixed(2)}</h2>
               <div className="flex gap-4">
                 <button
                   onClick={clearCart}

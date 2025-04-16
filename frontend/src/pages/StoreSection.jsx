@@ -11,7 +11,6 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 // === Search Context Setup ===
 const SearchContext = createContext();
 const useSearch = () => useContext(SearchContext);
-
 const StoreSection = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -212,7 +211,7 @@ const StoreSection = () => {
                     className="object-cover w-full h-40 rounded-md"
                   />
                   <h3 className="mt-2 text-lg font-bold">{product.name}</h3>
-                  <p className="text-gray-600">${product.price}</p>
+                  <p className="text-gray-600">₹{product.price}</p>
                 </Link>
                 <div className="flex gap-2 mt-2">
                   <button

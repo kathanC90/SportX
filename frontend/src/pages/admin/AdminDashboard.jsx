@@ -45,7 +45,7 @@
         setLoading(true);
 
         const [usersRes, ordersRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/users/merged"),
+          axios.get("http://localhost:5000/api/users/users-merged"),
           axios.get("http://localhost:5000/api/orders/admin/all"),
         ]);
 
