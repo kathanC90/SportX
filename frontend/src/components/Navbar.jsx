@@ -91,6 +91,7 @@ const Navbar = () => {
               onClick={() => setUserDropdown(!userDropdown)}
               aria-label="User Profile"
             />
+            
             <AnimatePresence>
               {userDropdown && (
                 <motion.div
@@ -99,6 +100,7 @@ const Navbar = () => {
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute right-0 w-64 p-4 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg dark:bg-gray-800 dark:border-gray-700"
                 >
+                  
                   <div className="flex flex-col items-center">
                     <img
                       src={user?.imageUrl}
@@ -112,9 +114,17 @@ const Navbar = () => {
                       {user?.primaryEmailAddress?.emailAddress}
                     </p>
                     <button
+  onClick={() => navigate("/profile")}
+  className="w-full px-4 py-2 mt-4 text-center text-blue-500 bg-gray-100 rounded-lg hover:bg-gray-200"
+>
+  View Profile
+</button>
+
+                    <button
                       onClick={handleLogout}
                       className="w-full px-4 py-2 mt-4 text-center text-white bg-red-500 rounded-lg hover:bg-red-600"
                     >
+                      
                       <FaSignOutAlt className="inline-block mr-2" /> Logout
                     </button>
                   </div>

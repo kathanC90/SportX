@@ -99,6 +99,7 @@ const submitReview = async () => {
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           className="w-16 h-16 border-4 border-blue-500 rounded-full border-t-transparent"
         ></motion.div>
+        
       </div>
     );
   }
@@ -140,6 +141,8 @@ const submitReview = async () => {
         >
           {/* Left Column: Image Gallery */}
           <div className="lg:col-span-1">
+          <br />
+          <br />
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -156,6 +159,8 @@ const submitReview = async () => {
               />
               
               <div className="flex p-4 space-x-3">
+              <br />
+              <br />
                 {productImages.map((image, index) => (
                   <div 
                     key={index}
@@ -174,7 +179,10 @@ const submitReview = async () => {
           </div>
           
           {/* Middle Column: Product Details */}
+          
           <div className="lg:col-span-1">
+          <br />
+          <br />
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -294,6 +302,8 @@ const submitReview = async () => {
           
           {/* Right Column: Additional Info */}
           <div className="lg:col-span-1">
+            <br />
+            <br />
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -331,7 +341,7 @@ const submitReview = async () => {
                 </div>
               </div>
             </motion.div>
-            
+            <br />
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}

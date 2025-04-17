@@ -51,6 +51,7 @@ router.put("/:userId/profile", async (req, res) => {
     await clerkClient.users.updateUser(userId, {
       firstName,
       lastName,
+      
     });
 
     // ✅ Upload Cloudinary image to Clerk profile if provided

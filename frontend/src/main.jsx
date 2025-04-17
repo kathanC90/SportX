@@ -24,7 +24,7 @@ import ProductDetail from "./pages/ProductDetail";
 import CartPage from "./pages/CartPage";
 import CheckoutPage from "./pages/CheckoutPage"; // ✅ Import Checkout Page
 import UserOrdersPage from "./pages/UserOrdersPage"; // ✅ Import User Orders Page
-
+import UserProfile from "./pages/UserProfile";
 // Admin Pages
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ProductsPage from "./pages/admin/ProductsPage";
@@ -35,7 +35,7 @@ import EditProfile from "./pages/admin/EditProfile";
 import EditProduct from "./pages/admin/EditProduct";
 import AddProduct from "./pages/admin/AddProduct";
 import TeamPage from "./pages/admin/Team";
-import AvailabilityPage from "./pages/admin/AvailabilityPage";
+import AdminContact from "./pages/admin/Admincontact";
 
 // 🔄 Role-Based Redirect
 const RoleRedirect = () => {
@@ -99,7 +99,7 @@ createRoot(document.getElementById("root")).render(
             <Route path="/productdetail/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/payment" element={<CheckoutPage />} /> {/* ✅ Added Checkout Page Route */}
-
+            <Route path="/profile" element={<UserProfile />} />
             {/* Protected User Routes */}
             <Route
               path="/dashboard"
@@ -134,7 +134,7 @@ createRoot(document.getElementById("root")).render(
                       <Route path="edit-profile" element={<EditProfile />} />
                       <Route path="add-product" element={<AddProduct />} />
                       <Route path="team" element={<TeamPage />} />
-                      <Route path="availability" element={<AvailabilityPage />} />
+                      <Route path="contact" element={<AdminContact />} />
                     </Routes>
                   </AdminRoute>
                 </SignedIn>

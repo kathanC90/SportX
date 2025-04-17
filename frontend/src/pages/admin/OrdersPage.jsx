@@ -60,7 +60,7 @@ const OrdersPage = () => {
       title: "Total",
       dataIndex: "totalAmount",
       key: "totalAmount",
-      render: (amount) => `$${parseFloat(amount).toFixed(2)}`,
+      render: (amount) => `₹${parseFloat(amount).toFixed(2)}`,
     },
     {
       title: "Status",
@@ -87,18 +87,7 @@ const OrdersPage = () => {
         </div>
       ) : "N/A",
     },
-    {
-      title: "Items",
-      dataIndex: "items",
-      key: "items",
-      render: (items) => (
-        <div>
-          {items?.map((item, idx) => (
-            <p key={idx}>{item.name} (x{item.quantity})</p>
-          )) || "No items"}
-        </div>
-      ),
-    },
+    
   ];
 
   return (

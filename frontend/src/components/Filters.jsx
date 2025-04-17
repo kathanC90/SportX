@@ -75,12 +75,12 @@ const Filters = ({ selectedFilters, onFilterChange, onClearFilters }) => {
           animate={{ scale: [1, 1.2, 1] }}
           transition={{ duration: 0.3 }}
         >
-          ${selectedFilters.price}
+          ₹{selectedFilters.price}
         </motion.span>
         <motion.input
           type="range"
-          min="0"
-          max="1000"
+          min="500"
+          max="1500"
           step="10"
           value={selectedFilters.price}
           onChange={(e) => onFilterChange("price", e.target.value)}

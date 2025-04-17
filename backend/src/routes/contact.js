@@ -27,5 +27,20 @@ router.post("/", async (req, res) => {
     res.status(500).json({ error: "Internal server error. Please try again later." });
   }
 });
+router.get("/", async (req, res) => {
+  try {
+    // Fetch all contact submissions from the database
+    const contacts = await Contact.findAll();
+
+    if (contacts.length === 0) {
+      return res.status(404).json({ message: "No contact submissions found." });
+    }
+
+    res.status(200).json(contacts);
+  } catch (error) {
+    console.error("❌ Error fetching contacts:", error);
+    res.status(500).json({ error: "Internal server error. Please try again later." });
+  }
+});
 
 module.exports = router;

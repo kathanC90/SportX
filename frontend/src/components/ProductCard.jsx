@@ -38,7 +38,7 @@ const ProductCard = ({ product }) => {
       {/* Info Section */}
       <div className="p-3 flex flex-col gap-1 flex-grow">
         <h3 className="text-sm font-bold truncate">{product.name}</h3>
-        <p className="text-sm font-semibold text-gray-700">${product.price.toFixed(2)}</p>
+        <p className="text-sm font-semibold text-gray-700">₹{product.price.toFixed(2)}</p>
         {product.brand && (
           <p className="text-xs text-gray-400 truncate">{product.brand}</p>
         )}

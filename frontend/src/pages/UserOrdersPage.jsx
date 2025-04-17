@@ -98,38 +98,83 @@
     };
 
     // Generate PDF Invoice
-    const generateInvoice = (order) => {
-      const doc = new jsPDF();
-      const { shippingAddress, totalAmount, id, createdAt, status } = order;
+    // Generate PDF Invoice
+const generateInvoice = (order) => {
+  try {
+    const doc = new jsPDF();
+    const { shippingAddress, totalAmount, id, createdAt, status, paymentId } = order;
+    
+    // Add title and company info
+    doc.setFontSize(20);
+    doc.setFont("helvetica", "bold");
+    doc.text("INVOICE", 105, 20, { align: "center" });
+    
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text("SportX", 14, 30);
+    doc.text("Camp Area Bhuj", 14, 35);
+    doc.text("Bhuj, Gujarat, 360370", 14, 40);
+    doc.text("contact@SportX.com", 14, 45);
 
-      // Add title
-      doc.setFontSize(18);
-      doc.text("Invoice", 14, 20);
+    // Add line separator
+    doc.setDrawColor(220, 220, 220);
+    doc.line(14, 50, 196, 50);
 
-      // Add order ID, date, and status
-      doc.setFontSize(12);
-      doc.text(`Order ID: ${id}`, 14, 30);
-      doc.text(`Date: ${formatDate(createdAt)}`, 14, 40);
-      doc.text(`Status: ${status}`, 14, 50);
+    // Add order details
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.text("INVOICE DETAILS", 14, 60);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`Invoice #: ${id.substring(0, 8)}`, 14, 70);
+    doc.text(`Date: ${formatDate(createdAt)}`, 14, 75);
+    doc.text(`Status: ${status.charAt(0).toUpperCase() + status.slice(1)}`, 14, 80);
+    doc.text(`Payment ID: ${paymentId || 'N/A'}`, 14, 85);
 
-      // Add shipping address
-      if (shippingAddress) {
-        doc.text("Shipping Address:", 14, 60);
-        doc.text(`${shippingAddress.fullName}`, 14, 70);
-        doc.text(`${shippingAddress.addressLine1}`, 14, 80);
-        if (shippingAddress.addressLine2) doc.text(`${shippingAddress.addressLine2}`, 14, 90);
-        doc.text(`${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.postalCode}`, 14, 100);
-        doc.text(`${shippingAddress.country}`, 14, 110);
-        doc.text(`Phone: ${shippingAddress.phone}`, 14, 120);
-      }
+    // Add client details if shipping address exists
+    if (shippingAddress && typeof shippingAddress === 'object') {
+      doc.setFont("helvetica", "bold");
+      doc.text("SHIPPING DETAILS", 120, 60);
+      
+      doc.setFont("helvetica", "normal");
+      doc.text(`${shippingAddress.fullName}`, 120, 70);
+      doc.text(`${shippingAddress.addressLine1}`, 120, 75);
+      if (shippingAddress.addressLine2) doc.text(`${shippingAddress.addressLine2}`, 120, 80);
+      doc.text(`${shippingAddress.city}, ${shippingAddress.state} ${shippingAddress.postalCode}`, 120, 85);
+      doc.text(`${shippingAddress.country}`, 120, 90);
+      doc.text(`Phone: ${shippingAddress.phone}`, 120, 95);
+    }
 
-      // Add total amount
-      doc.text(`Total Amount: ₹${totalAmount.toFixed(2)}`, 14, 130);
+    // Draw table header for order summary
+    doc.setDrawColor(0, 0, 0);
+    doc.setFillColor(240, 240, 240);
+    doc.rect(14, 105, 182, 10, 'F');
+    
+    doc.setFont("helvetica", "bold");
+    doc.text("ORDER SUMMARY", 105, 112, { align: "center" });
 
-      // Save PDF
-      doc.save(`${id}_invoice.pdf`);
-    };
+    // Add line for totals
+    doc.line(14, 125, 196, 125);
+    
+    // Add total amount
+    doc.setFont("helvetica", "bold");
+    doc.text("Total Amount:", 140, 135);
+    doc.text(`₹ ${totalAmount.toFixed(2)}`, 180, 135, { align: "right" });
 
+    // Add footer
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Thank you for your purchase!", 105, 180, { align: "center" });
+    doc.text("For any questions regarding this invoice, please contact our support team.", 105, 185, { align: "center" });
+
+    // Save PDF
+    doc.save(`${id.substring(0, 8)}_invoice.pdf`);
+    toast.success("Invoice downloaded successfully");
+  } catch (error) {
+    console.error("Error generating invoice:", error);
+    toast.error("Failed to generate invoice");
+  }
+};
     return (
       <>
         <Navbar />

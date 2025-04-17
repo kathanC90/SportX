@@ -155,7 +155,7 @@ const AddProduct = () => {
                   </Select>
                 </Form.Item>
 
-                <Form.Item label="Price ($)" name="price" rules={[{ required: true, message: "Please enter price!" }]}>
+                <Form.Item label="Price (₹)" name="price" rules={[{ required: true, message: "Please enter price!" }]}>
                   <Input type="number" placeholder="Enter price" min="0" step="0.01" />
                 </Form.Item>
               </div>

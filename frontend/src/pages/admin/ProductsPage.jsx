@@ -130,7 +130,7 @@ const ProductsPage = () => {
                       className="overflow-hidden shadow-lg rounded-xl"
                     >
                       <Title level={4}>{product.name}</Title>
-                      <Text className="text-lg font-semibold text-gray-600">${product.price}</Text>
+                      <Text className="text-lg font-semibold text-gray-600">₹{product.price}</Text>
                       <div className="flex items-center mt-2">
                         <Rate disabled defaultValue={product.rating || 0} className="text-yellow-500" />
                         <Text className="ml-2 text-gray-500">({product.reviews || 0} reviews)</Text>

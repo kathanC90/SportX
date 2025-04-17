@@ -6,7 +6,8 @@ import {
   DollarOutlined, 
   FileTextOutlined, 
   CheckCircleOutlined, 
-  TeamOutlined 
+  TeamOutlined ,
+  MailOutlined
 } from "@ant-design/icons";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -54,11 +55,11 @@ const Sidebar = () => {
         <Menu.Item key="/admin/invoice" icon={<FileTextOutlined />}>
           <NavLink to="/admin/invoice">Invoices</NavLink>
         </Menu.Item>
-        <Menu.Item key="/admin/availability" icon={<CheckCircleOutlined />}>
-          <NavLink to="/admin/availability">Availability</NavLink>
+        <Menu.Item key="/admin/contact" icon={<MailOutlined />}>
+          <NavLink to="/admin/contact">Contact</NavLink>
         </Menu.Item>
         <Menu.Item key="/admin/team" icon={<TeamOutlined />}>
-          <NavLink to="/admin/team">Team</NavLink>
+          <NavLink to="/admin/team">User Management</NavLink>
         </Menu.Item>
       </Menu>
     </Sider>

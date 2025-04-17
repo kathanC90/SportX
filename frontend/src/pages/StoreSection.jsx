@@ -15,7 +15,7 @@ const StoreSection = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedFilters, setSelectedFilters] = useState({ price: 300, color: "" });
+  const [selectedFilters, setSelectedFilters] = useState({ price: 799, color: "" });
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [userDropdown, setUserDropdown] = useState(false);
