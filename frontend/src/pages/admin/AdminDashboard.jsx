@@ -130,7 +130,7 @@
                       <Card className="shadow-md">
                         <Statistic
                           title="Total Revenue"
-                          value={`$${totalRevenue.toFixed(2)}`}
+                          value={`₹${totalRevenue.toFixed(2)}`}
                           prefix={<DollarOutlined />}
                           valueStyle={{ color: "#3f8600" }}
                         />

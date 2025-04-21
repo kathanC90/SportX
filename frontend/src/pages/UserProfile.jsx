@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import {
   Layout,
@@ -35,9 +36,20 @@ const UserProfile = () => {
   const [image, setImage] = useState(DEFAULT_IMAGE);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
+  
   const userId = user?.id;
+  useEffect(() => {
+    const syncClerkUsers = async () => {
+      try {
+        await api.get("/users-merged");
+        console.log("✅ Synced Clerk users with DB");
+      } catch (error) {
+        console.error("❌ Failed to sync users:", error);
+      }
+    };
 
+    syncClerkUsers();
+    }, []);
   useEffect(() => {
     const fetchProfile = async () => {
       if (!userId) return;
@@ -105,7 +117,8 @@ const UserProfile = () => {
       message.error("Profile update failed");
       console.error("Update error:", error);
     }
-  };
+  };  
+  
 
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f8" }}>
