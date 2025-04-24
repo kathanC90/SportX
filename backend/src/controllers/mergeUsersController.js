@@ -8,7 +8,7 @@ const mergeUsersCore = async () => {
 
   const dbClerkIds = dbUsers.map((u) => u.clerkId);
   const newSyncedUsers = [];
-
+  
   for (const clerkUser of clerkUsers) {
     const { id: clerkId, emailAddresses, firstName, lastName, imageUrl } = clerkUser;
     const email = emailAddresses?.[0]?.emailAddress || null;

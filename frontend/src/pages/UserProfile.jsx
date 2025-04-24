@@ -10,6 +10,7 @@ import {
   Card,
   Typography,
   message,
+  
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
@@ -123,7 +124,7 @@ const UserProfile = () => {
   return (
     <Layout style={{ minHeight: "100vh", background: "#f4f6f8" }}>
       <Navbar />
-      <Content className="flex items-center justify-center pt-32 px-4 pb-12">
+      <Content className="flex items-center justify-center px-4 pt-32 pb-12">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -166,7 +167,7 @@ const UserProfile = () => {
                 rules={[{ required: true, message: "Enter your first name" }]}
               >
                 <Input placeholder="Enter your first name" />
-              </Form.Item>
+              </Form.Item>  
 
               <Form.Item
                 label="Last Name"
